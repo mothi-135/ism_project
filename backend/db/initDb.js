@@ -1,4 +1,5 @@
 const db = require('../db');
+const createBaseTables = require('./createBaseTables');
 
 async function initializeDatabase() {
   console.log('🔄 Initializing database schema updates...');
@@ -6,6 +7,9 @@ async function initializeDatabase() {
 
   try {
     await client.query('BEGIN');
+
+    // 0. Bootstrap: Create all base tables in exact dependency order
+    await createBaseTables(client);
 
     // 1. Create tutor_student_pairings table
     console.log('Creating table: tutor_student_pairings...');
