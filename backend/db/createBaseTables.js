@@ -58,7 +58,9 @@ async function createBaseTables(client) {
       s_gender VARCHAR(20),
       s_grade VARCHAR(50),
       school_name VARCHAR(150),
-      board VARCHAR(50),
+      s_school_name VARCHAR(150),
+      board VARCHAR(150),
+      s_board VARCHAR(150),
       parent_name VARCHAR(150),
       phone VARCHAR(20),
       address TEXT,
@@ -76,6 +78,24 @@ async function createBaseTables(client) {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  await client.query(`
+    ALTER TABLE IF EXISTS student_personal_info 
+      ADD COLUMN IF NOT EXISTS s_school_name VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS s_board VARCHAR(150);
+  `);
+
+  // 5b. Student Parent Info
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS student_parent_info (
+      s_id INT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+      father_name VARCHAR(150),
+      father_mobile VARCHAR(20),
+      father_occupation VARCHAR(100),
+      mother_name VARCHAR(150),
+      mother_mobile VARCHAR(20),
+      mother_occupation VARCHAR(100)
+    );
+  `);
 
   // 6. Student Preferences
   await client.query(`
@@ -89,8 +109,13 @@ async function createBaseTables(client) {
       bio BOOLEAN DEFAULT FALSE,
       chem BOOLEAN DEFAULT FALSE,
       social BOOLEAN DEFAULT FALSE,
-      tutor_gender VARCHAR(20)
+      tutor_gender VARCHAR(20),
+      additional_requirements TEXT
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS student_preferences 
+      ADD COLUMN IF NOT EXISTS additional_requirements TEXT;
   `);
 
   // 7. Student Location Info
@@ -129,17 +154,49 @@ async function createBaseTables(client) {
       t_id INT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
       t_name VARCHAR(150) NOT NULL,
       gender VARCHAR(20),
+      t_gender VARCHAR(20),
       qualification VARCHAR(150),
       experience_years INT DEFAULT 0,
       phone VARCHAR(20),
+      t_phone VARCHAR(20),
       address TEXT,
       landmark VARCHAR(150),
       aadhaar VARCHAR(20),
+      t_adhaar_num VARCHAR(20),
       caste VARCHAR(50),
+      t_caste VARCHAR(50),
       religion VARCHAR(50),
+      t_religion VARCHAR(50),
       loyalty_points INT DEFAULT 0,
       is_verified BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS tutor_personal_info 
+      ADD COLUMN IF NOT EXISTS t_gender VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS t_phone VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS t_adhaar_num VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS t_caste VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS t_religion VARCHAR(50);
+  `);
+
+  // 9b. Tutor Education Info
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS tutor_education_info (
+      t_id INT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+      tenth_school_name VARCHAR(150),
+      tenth_cgpa NUMERIC,
+      inter_stream VARCHAR(50),
+      inter_clg_name VARCHAR(150),
+      inter_cgpa NUMERIC,
+      deg_name VARCHAR(150),
+      deg_clg_name VARCHAR(150),
+      deg_cpga NUMERIC,
+      deg_cgpa NUMERIC,
+      deg_passing_year INT,
+      occupation VARCHAR(100),
+      experience VARCHAR(50)
     );
   `);
 
@@ -156,8 +213,17 @@ async function createBaseTables(client) {
       chem BOOLEAN DEFAULT FALSE,
       social BOOLEAN DEFAULT FALSE,
       start_grade VARCHAR(20),
-      end_grade VARCHAR(20)
+      end_grade VARCHAR(20),
+      pincode1 VARCHAR(20),
+      pincode2 VARCHAR(20),
+      pincode3 VARCHAR(20)
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS tutor_preference_info 
+      ADD COLUMN IF NOT EXISTS pincode1 VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS pincode2 VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS pincode3 VARCHAR(20);
   `);
 
   // 11. Tutor Location Info
@@ -198,13 +264,20 @@ async function createBaseTables(client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS assigned_info (
       assign_id SERIAL PRIMARY KEY,
+      d_id SERIAL,
       t_id INT REFERENCES tutor_personal_info(t_id) ON DELETE CASCADE,
       s_id INT REFERENCES student_personal_info(s_id) ON DELETE CASCADE,
       confirmed_fee NUMERIC NOT NULL DEFAULT 0,
       join_date DATE DEFAULT CURRENT_DATE,
       pincode INT,
+      status VARCHAR(20) DEFAULT 'active',
       UNIQUE (t_id, s_id)
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS assigned_info 
+      ADD COLUMN IF NOT EXISTS d_id INT,
+      ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active';
   `);
 
   // 14. Payment History
@@ -216,8 +289,17 @@ async function createBaseTables(client) {
       billing_period_start DATE NOT NULL,
       billing_period_end DATE NOT NULL,
       status VARCHAR(20) DEFAULT 'paid',
+      payment_status VARCHAR(20) DEFAULT 'PAID',
+      pairng_id INT,
+      pairing_id INT,
       paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS payement_history 
+      ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'PAID',
+      ADD COLUMN IF NOT EXISTS pairng_id INT,
+      ADD COLUMN IF NOT EXISTS pairing_id INT;
   `);
 
   // 15. Seed default locations if empty
@@ -255,16 +337,26 @@ async function createBaseTables(client) {
   // 3. Student: student1@example.com / ism@123
   const sId = await upsertDemoUser('student1@example.com', 'ism@123', 3, 1);
   await client.query(`
-    INSERT INTO student_personal_info (s_id, s_name, s_gender, s_grade, school_name, board, parent_name, phone, address, landmark)
-    VALUES ($1, 'Demo Student One', 'Male', '10th', 'St. Johns High School', 'CBSE', 'Parent One', '9876543210', '123 Student Street, Naidupet', 'Near Clock Tower')
+    INSERT INTO student_personal_info (s_id, s_name, s_gender, s_grade, school_name, s_school_name, board, s_board, parent_name, phone, address, landmark)
+    VALUES ($1, 'Demo Student One', 'Male', '10th', 'St. Johns High School', 'St. Johns High School', 'CBSE', 'CBSE', 'Parent One', '9876543210', '123 Student Street, Naidupet', 'Near Clock Tower')
+    ON CONFLICT (s_id) DO UPDATE SET s_school_name = EXCLUDED.s_school_name, s_board = EXCLUDED.s_board;
+  `, [sId]);
+  await client.query(`
+    INSERT INTO student_parent_info (s_id, father_name, father_mobile, father_occupation, mother_name, mother_mobile, mother_occupation)
+    VALUES ($1, 'Parent One', '9876543210', 'Engineer', 'Mother One', '9876543211', 'Homemaker')
     ON CONFLICT (s_id) DO NOTHING;
   `, [sId]);
 
   // 4. Tutor: tutor1@example.com / ism@123
   const tId = await upsertDemoUser('tutor1@example.com', 'ism@123', 4, 1);
   await client.query(`
-    INSERT INTO tutor_personal_info (t_id, t_name, gender, qualification, experience_years, phone, address, landmark, loyalty_points, is_verified)
-    VALUES ($1, 'Demo Tutor One', 'Female', 'M.Sc Mathematics', 5, '9123456789', '456 Tutor Avenue, Naidupet', 'Near Railway Station', 100, TRUE)
+    INSERT INTO tutor_personal_info (t_id, t_name, gender, t_gender, qualification, experience_years, phone, t_phone, address, landmark, loyalty_points, is_verified, t_caste, t_religion)
+    VALUES ($1, 'Demo Tutor One', 'Female', 'Female', 'M.Sc Mathematics', 5, '9123456789', '9123456789', '456 Tutor Avenue, Naidupet', 'Near Railway Station', 100, TRUE, 'OBC', 'HINDU')
+    ON CONFLICT (t_id) DO UPDATE SET t_gender = EXCLUDED.t_gender, t_phone = EXCLUDED.t_phone, t_caste = EXCLUDED.t_caste, t_religion = EXCLUDED.t_religion;
+  `, [tId]);
+  await client.query(`
+    INSERT INTO tutor_education_info (t_id, tenth_school_name, tenth_cgpa, inter_stream, inter_clg_name, inter_cgpa, deg_name, deg_clg_name, deg_cpga, deg_cgpa, deg_passing_year, occupation, experience)
+    VALUES ($1, 'ZPHS School', 9.5, 'MPC', 'Junior College', 9.2, 'M.Sc Mathematics', 'University', 8.5, 8.5, 2018, 'Teacher', '5 years')
     ON CONFLICT (t_id) DO NOTHING;
   `, [tId]);
 
