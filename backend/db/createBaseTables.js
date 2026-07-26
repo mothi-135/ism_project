@@ -99,8 +99,19 @@ async function createBaseTables(client) {
       id SERIAL PRIMARY KEY,
       s_id INT REFERENCES users(user_id) ON DELETE CASCADE,
       location_id INT REFERENCES locations(location_id) ON DELETE SET NULL,
-      pincode INT
+      town_id INT REFERENCES locations(location_id) ON DELETE SET NULL,
+      s_address TEXT,
+      landmark VARCHAR(150),
+      pincode VARCHAR(20)
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS student_location_info 
+      ADD COLUMN IF NOT EXISTS location_id INT,
+      ADD COLUMN IF NOT EXISTS town_id INT,
+      ADD COLUMN IF NOT EXISTS s_address TEXT,
+      ADD COLUMN IF NOT EXISTS landmark VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);
   `);
 
   // 8. Student Time Slot
@@ -155,8 +166,21 @@ async function createBaseTables(client) {
       id SERIAL PRIMARY KEY,
       t_id INT REFERENCES users(user_id) ON DELETE CASCADE,
       location_id INT REFERENCES locations(location_id) ON DELETE SET NULL,
+      town INT REFERENCES locations(location_id) ON DELETE SET NULL,
+      full_address TEXT,
+      landmark VARCHAR(150),
+      pincode VARCHAR(20),
       pincodes INT[]
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS tutor_location_info 
+      ADD COLUMN IF NOT EXISTS location_id INT,
+      ADD COLUMN IF NOT EXISTS town INT,
+      ADD COLUMN IF NOT EXISTS full_address TEXT,
+      ADD COLUMN IF NOT EXISTS landmark VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS pincode VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS pincodes INT[];
   `);
 
   // 12. Tutor Availability Info

@@ -30,14 +30,12 @@ const AdminModel = {
         u.created_at as "joiningDate",
         l.location_name as town,
         (SELECT COUNT(*) FROM users s_u 
-         LEFT JOIN student_location_info sli ON s_u.user_id = sli.s_id 
-         WHERE s_u.role_id = 3 AND sli.town_id = u.location_id) as student_count,
+         WHERE s_u.role_id = 3 AND s_u.location_id = u.location_id) as student_count,
         (SELECT COUNT(*) FROM users t_u 
-         LEFT JOIN tutor_location_info tli ON t_u.user_id = tli.t_id 
-         WHERE t_u.role_id = 4 AND tli.town = u.location_id) as tutor_count,
+         WHERE t_u.role_id = 4 AND t_u.location_id = u.location_id) as tutor_count,
         (SELECT COALESCE(SUM(ai.confirmed_fee), 0) FROM assigned_info ai
-         LEFT JOIN student_location_info sli ON ai.s_id = sli.s_id
-         WHERE sli.town_id = u.location_id) as revenue
+         LEFT JOIN users s_u ON ai.s_id = s_u.user_id
+         WHERE s_u.location_id = u.location_id) as revenue
       FROM users u
       LEFT JOIN locations l ON u.location_id = l.location_id
       WHERE u.role_id IN (1, 2)
