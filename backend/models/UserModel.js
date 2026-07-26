@@ -3,7 +3,11 @@ const db = require('../db');
 // Map DB role names to the lowercase role strings the frontend expects
 const ROLE_MAP = {
   'GLOBAL ADMIN': 'globaladmin',
+  'SUPER ADMIN': 'globaladmin',
+  'GLOBALADMIN': 'globaladmin',
   'ADMIN': 'admin',
+  'LOCAL ADMIN': 'admin',
+  'TOWN ADMIN': 'admin',
   'STUDENT': 'student',
   'TUTOR': 'tutor',
 };
@@ -29,7 +33,8 @@ const UserModel = {
     if (row.password !== password) return null;
 
     // 3. Map the DB role to the frontend role string
-    const role = ROLE_MAP[row.role_name];
+    const roleName = row.role_name ? row.role_name.toUpperCase() : '';
+    const role = ROLE_MAP[roleName];
     if (!role) return null;
 
     // 4. Build the base user object
