@@ -285,7 +285,9 @@ async function createBaseTables(client) {
   `);
   await client.query(`
     ALTER TABLE IF EXISTS tutor_availability_info 
-      ALTER COLUMN availability TYPE VARCHAR(50) USING (CASE WHEN availability=true OR availability='true' OR availability='AVAILABLE' THEN 'AVAILABLE' ELSE 'UNAVAILABLE' END);
+      ALTER COLUMN availability DROP DEFAULT,
+      ALTER COLUMN availability TYPE VARCHAR(50) USING (CASE WHEN availability::text = 'true' OR availability::text = 't' OR availability::text ILIKE '%avail%' THEN 'AVAILABLE' ELSE 'UNAVAILABLE' END),
+      ALTER COLUMN availability SET DEFAULT 'AVAILABLE';
   `);
   await client.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_tutor_avail_unique ON tutor_availability_info (t_id, day_id, slot_id);
