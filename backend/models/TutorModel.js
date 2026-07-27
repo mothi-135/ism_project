@@ -182,9 +182,9 @@ const TutorModel = {
       LEFT JOIN tutor_location_info tli ON u.user_id = tli.t_id
       LEFT JOIN locations l ON tli.town = l.location_id
       LEFT JOIN tutor_preference_info tpre ON u.user_id = tpre.t_id
-      LEFT JOIN pincodes p1 ON tpre.pincode1 = p1.code_id
-      LEFT JOIN pincodes p2 ON tpre.pincode2 = p2.code_id
-      LEFT JOIN pincodes p3 ON tpre.pincode3 = p3.code_id
+      LEFT JOIN pincodes p1 ON tpre.pincode1::VARCHAR = p1.code_id::VARCHAR
+      LEFT JOIN pincodes p2 ON tpre.pincode2::VARCHAR = p2.code_id::VARCHAR
+      LEFT JOIN pincodes p3 ON tpre.pincode3::VARCHAR = p3.code_id::VARCHAR
       WHERE u.role_id = 4
       ORDER BY u.user_id DESC
     `;
@@ -286,9 +286,9 @@ const TutorModel = {
       LEFT JOIN tutor_location_info tli ON u.user_id = tli.t_id
       LEFT JOIN locations l ON tli.town = l.location_id
       LEFT JOIN tutor_preference_info tpre ON u.user_id = tpre.t_id
-      LEFT JOIN pincodes p1 ON tpre.pincode1 = p1.code_id
-      LEFT JOIN pincodes p2 ON tpre.pincode2 = p2.code_id
-      LEFT JOIN pincodes p3 ON tpre.pincode3 = p3.code_id
+      LEFT JOIN pincodes p1 ON tpre.pincode1::VARCHAR = p1.code_id::VARCHAR
+      LEFT JOIN pincodes p2 ON tpre.pincode2::VARCHAR = p2.code_id::VARCHAR
+      LEFT JOIN pincodes p3 ON tpre.pincode3::VARCHAR = p3.code_id::VARCHAR
       WHERE u.user_id = $1
     `;
     const result = await db.query(query, [dbId]);

@@ -33,8 +33,12 @@ async function createBaseTables(client) {
     CREATE TABLE IF NOT EXISTS pincodes (
       code_id SERIAL PRIMARY KEY,
       location_id INT REFERENCES locations(location_id) ON DELETE CASCADE,
-      pincode INT UNIQUE
+      pincode VARCHAR(20) UNIQUE
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS pincodes 
+      ALTER COLUMN pincode TYPE VARCHAR(20) USING pincode::VARCHAR;
   `);
 
   // 4. Users table
@@ -43,7 +47,7 @@ async function createBaseTables(client) {
       user_id SERIAL PRIMARY KEY,
       email VARCHAR(255) UNIQUE NOT NULL,
       password VARCHAR(255) NOT NULL,
-      role_id INT REFERENCES roles(role_id) ON DELETE SET NULL,
+      role_id INT REFERENCES roles(role_id) ON DELETE RESTRICT,
       location_id INT REFERENCES locations(location_id) ON DELETE SET NULL,
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -59,6 +63,7 @@ async function createBaseTables(client) {
       s_grade VARCHAR(50),
       school_name VARCHAR(150),
       s_school_name VARCHAR(150),
+      s_school_city VARCHAR(50),
       board VARCHAR(150),
       s_board VARCHAR(150),
       parent_name VARCHAR(150),
@@ -66,8 +71,11 @@ async function createBaseTables(client) {
       address TEXT,
       landmark VARCHAR(150),
       aadhaar VARCHAR(20),
+      s_adhaar_num VARCHAR(20),
       caste VARCHAR(50),
+      s_caste VARCHAR(50),
       religion VARCHAR(50),
+      s_religion VARCHAR(50),
       father_name VARCHAR(150),
       father_phone VARCHAR(20),
       father_occupation VARCHAR(100),
@@ -81,7 +89,11 @@ async function createBaseTables(client) {
   await client.query(`
     ALTER TABLE IF EXISTS student_personal_info 
       ADD COLUMN IF NOT EXISTS s_school_name VARCHAR(150),
-      ADD COLUMN IF NOT EXISTS s_board VARCHAR(150);
+      ADD COLUMN IF NOT EXISTS s_school_city VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS s_board VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS s_adhaar_num VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS s_caste VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS s_religion VARCHAR(50);
   `);
 
   // 5b. Student Parent Info
@@ -110,12 +122,16 @@ async function createBaseTables(client) {
       chem BOOLEAN DEFAULT FALSE,
       social BOOLEAN DEFAULT FALSE,
       tutor_gender VARCHAR(20),
+      tutot_religion VARCHAR(50),
+      tutor_religion VARCHAR(50),
       additional_requirements TEXT
     );
   `);
   await client.query(`
     ALTER TABLE IF EXISTS student_preferences 
-      ADD COLUMN IF NOT EXISTS additional_requirements TEXT;
+      ADD COLUMN IF NOT EXISTS additional_requirements TEXT,
+      ADD COLUMN IF NOT EXISTS tutot_religion VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS tutor_religion VARCHAR(50);
   `);
 
   // 7. Student Location Info
@@ -144,8 +160,16 @@ async function createBaseTables(client) {
     CREATE TABLE IF NOT EXISTS student_time_slot (
       id SERIAL PRIMARY KEY,
       s_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+      day_id INT DEFAULT 1,
       slot_id INT
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS student_time_slot 
+      ADD COLUMN IF NOT EXISTS day_id INT DEFAULT 1;
+  `);
+  await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_student_slot_unique ON student_time_slot (s_id, day_id, slot_id);
   `);
 
   // 9. Tutor Personal Info
@@ -256,8 +280,15 @@ async function createBaseTables(client) {
       t_id INT REFERENCES users(user_id) ON DELETE CASCADE,
       day_id INT,
       slot_id INT,
-      availability BOOLEAN DEFAULT TRUE
+      availability VARCHAR(50) DEFAULT 'AVAILABLE'
     );
+  `);
+  await client.query(`
+    ALTER TABLE IF EXISTS tutor_availability_info 
+      ALTER COLUMN availability TYPE VARCHAR(50) USING (CASE WHEN availability=true OR availability='true' OR availability='AVAILABLE' THEN 'AVAILABLE' ELSE 'UNAVAILABLE' END);
+  `);
+  await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tutor_avail_unique ON tutor_availability_info (t_id, day_id, slot_id);
   `);
 
   // 13. Assigned Info
@@ -267,6 +298,8 @@ async function createBaseTables(client) {
       d_id SERIAL,
       t_id INT REFERENCES tutor_personal_info(t_id) ON DELETE CASCADE,
       s_id INT REFERENCES student_personal_info(s_id) ON DELETE CASCADE,
+      start_slot INT DEFAULT 3,
+      end_slot INT DEFAULT 4,
       confirmed_fee NUMERIC NOT NULL DEFAULT 0,
       join_date DATE DEFAULT CURRENT_DATE,
       pincode INT,
@@ -277,6 +310,8 @@ async function createBaseTables(client) {
   await client.query(`
     ALTER TABLE IF EXISTS assigned_info 
       ADD COLUMN IF NOT EXISTS d_id INT,
+      ADD COLUMN IF NOT EXISTS start_slot INT DEFAULT 3,
+      ADD COLUMN IF NOT EXISTS end_slot INT DEFAULT 4,
       ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active';
   `);
 
