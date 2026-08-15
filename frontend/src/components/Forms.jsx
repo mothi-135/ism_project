@@ -4,7 +4,7 @@ import { API_URL } from './Shared';
 export const StudentForm = ({ onDone }) => {
   const [step, setStep] = useState(1);
   const TOTAL = 3;
-  const [data, setData] = useState({ name: '', gender: '', grade: '', school: '', board: '', weakSubjects: [], parent: '', phone: '', town: '', address: '', preferredGender: '', slots: [], pincode: '', additionalRequirements: '', aadhaar: '', schoolCity: '', caste: '', religion: '', fatherName: '', fatherPhone: '', fatherOccupation: '', motherName: '', motherPhone: '', motherOccupation: '', landmark: '' });
+  const [data, setData] = useState({ name: '', gender: '', grade: '', academicYear: '', school: '', board: '', weakSubjects: [], parent: '', phone: '', town: '', address: '', preferredGender: '', slots: [], pincode: '', additionalRequirements: '', aadhaar: '', schoolCity: '', caste: '', religion: '', fatherName: '', fatherPhone: '', fatherOccupation: '', motherName: '', motherPhone: '', motherOccupation: '', landmark: '' });
   const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'Hindi', 'Telugu', 'Social Studies', 'Science'];
   const up = (k, v) => setData(p => ({ ...p, [k]: v }));
   const toggleSubject = (s) => setData(p => ({ ...p, weakSubjects: p.weakSubjects.includes(s) ? p.weakSubjects.filter(x => x !== s) : [...p.weakSubjects, s] }));
@@ -55,11 +55,15 @@ export const StudentForm = ({ onDone }) => {
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Aadhaar Number</label><input className="form-input" placeholder="12-digit Aadhaar" value={data.aadhaar} onChange={e => up('aadhaar', e.target.value)} /></div>
-              <div className="form-group"><label className="form-label">Grade / Class</label><select className="form-input" value={data.grade} onChange={e => up('grade', e.target.value)}><option value="">Select</option>{['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'].map(g => <option key={g}>{g}</option>)}</select></div>
+              <div className="form-group"><label className="form-label">Grade / Class</label><select className="form-input" value={data.grade} onChange={e => up('grade', e.target.value)}><option value="">Select</option>{['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'].map(g => <option key={g}>{g}</option>)}</select></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">School Name</label><input className="form-input" placeholder="School name" value={data.school} onChange={e => up('school', e.target.value)} /></div>
               <div className="form-group"><label className="form-label">School City</label><input className="form-input" placeholder="School city" value={data.schoolCity} onChange={e => up('schoolCity', e.target.value)} /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label className="form-label">Academic Year</label><select className="form-input" value={data.academicYear} onChange={e => up('academicYear', e.target.value)}><option value="">Select</option><option>2023-2024</option><option>2024-2025</option><option>2025-2026</option><option>2026-2027</option></select></div>
+              <div className="form-group"></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Board</label><select className="form-input" value={data.board} onChange={e => up('board', e.target.value)}><option value="">Select</option><option>CBSE</option><option>AP State</option><option>ICSE</option></select></div>
@@ -71,14 +75,14 @@ export const StudentForm = ({ onDone }) => {
             </div>
             <div className="form-group">
               <label className="form-label">Weak Subjects</label>
-                <div className="checkbox-group mt-4">
-                  {subjects.map(s => (
-                    <label key={s} className={`checkbox-pill ${data.weakSubjects.includes(s) ? 'selected' : ''}`}>
-                      <input type="checkbox" checked={data.weakSubjects.includes(s)} onChange={() => toggleSubject(s)} />
-                      {s}
-                    </label>
-                  ))}
-                </div>
+              <div className="checkbox-group mt-4">
+                {subjects.map(s => (
+                  <label key={s} className={`checkbox-pill ${data.weakSubjects.includes(s) ? 'selected' : ''}`}>
+                    <input type="checkbox" checked={data.weakSubjects.includes(s)} onChange={() => toggleSubject(s)} />
+                    {s}
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </>}
@@ -99,7 +103,7 @@ export const StudentForm = ({ onDone }) => {
               <div className="form-group"><label className="form-label">Mother Mobile</label><input className="form-input" placeholder="10-digit mobile" maxLength={10} value={data.motherPhone} onChange={e => up('motherPhone', e.target.value)} /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label className="form-label">Mother Occupation</label><input className="form-input" placeholder="e.g. Housewife, Doctor" value={data.motherOccupation} onChange={e => up('motherOccupation', e.target.value)} /></div>
+              <div className="form-group"><label className="form-label">Mother Occupation</label><input className="form-input" placeholder="generation shaper" value={data.motherOccupation} onChange={e => up('motherOccupation', e.target.value)} /></div>
               <div className="form-group"></div>
             </div>
             <div className="form-row">
@@ -139,6 +143,7 @@ export const StudentForm = ({ onDone }) => {
               {data.name && <div className="info-row"><span className="info-key">Name</span><span className="info-val">{data.name}</span></div>}
               {data.aadhaar && <div className="info-row"><span className="info-key">Aadhaar Number</span><span className="info-val">{data.aadhaar}</span></div>}
               {data.grade && <div className="info-row"><span className="info-key">Grade</span><span className="info-val">{data.grade}</span></div>}
+              {data.academicYear && <div className="info-row"><span className="info-key">Academic Year</span><span className="info-val">{data.academicYear}</span></div>}
               {data.board && <div className="info-row"><span className="info-key">Board</span><span className="info-val">{data.board}</span></div>}
               {data.school && <div className="info-row"><span className="info-key">School Name</span><span className="info-val">{data.school}</span></div>}
               {data.schoolCity && <div className="info-row"><span className="info-key">School City</span><span className="info-val">{data.schoolCity}</span></div>}
@@ -226,7 +231,7 @@ const getCombinedSlots = (slots) => {
 export const TutorForm = ({ onDone }) => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
-    name: '', gender: '', phone: '', subjects: [], gradeFrom: '', gradeTo: '', qualification: '', experience: '', address: '', aadhaar: '', 
+    name: '', gender: '', phone: '', subjects: [], gradeFrom: '', gradeTo: '', qualification: '', experience: '', address: '', aadhaar: '',
     caste: '', religion: '', landmark: '', pincodes: '', town: '',
     tenth_school_name: '', tenth_cgpa: '', inter_stream: '', inter_college_name: '', inter_cgpa: '', degree_name: '', degree_college_name: '', degree_cgpa: '', occupation: '',
     availability: { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] }
@@ -268,7 +273,7 @@ export const TutorForm = ({ onDone }) => {
         break;
       }
     }
-    
+
     setData(p => {
       const newAvail = { ...p.availability };
       for (const d of days) {
@@ -377,14 +382,14 @@ export const TutorForm = ({ onDone }) => {
             </div>
             <div className="form-group">
               <label className="form-label">Subjects You Can Teach</label>
-                <div className="checkbox-group mt-4">
-                  {subjects.map(s => (
-                    <label key={s} className={`checkbox-pill ${data.subjects.includes(s) ? 'selected' : ''}`}>
-                      <input type="checkbox" checked={data.subjects.includes(s)} onChange={() => toggle(s)} />
-                      {s}
-                    </label>
-                  ))}
-                </div>
+              <div className="checkbox-group mt-4">
+                {subjects.map(s => (
+                  <label key={s} className={`checkbox-pill ${data.subjects.includes(s) ? 'selected' : ''}`}>
+                    <input type="checkbox" checked={data.subjects.includes(s)} onChange={() => toggle(s)} />
+                    {s}
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Teaches From Grade</label><select className="form-input" value={data.gradeFrom} onChange={e => up('gradeFrom', e.target.value)}><option value="">Select</option>{['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'].map(g => <option key={g}>{g}</option>)}</select></div>
@@ -394,21 +399,21 @@ export const TutorForm = ({ onDone }) => {
               <div className="form-group"><label className="form-label">Current Occupation</label><input className="form-input" placeholder="e.g. Teacher, Engineer" value={data.occupation} onChange={e => up('occupation', e.target.value)} /></div>
               <div className="form-group"></div>
             </div>
-            
-            <div className="form-section-title mt-16" style={{fontSize: 14}}>Education Details</div>
+
+            <div className="form-section-title mt-16" style={{ fontSize: 14 }}>Education Details</div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">10th School Name</label><input className="form-input" placeholder="School Name" value={data.tenth_school_name} onChange={e => up('tenth_school_name', e.target.value)} /></div>
               <div className="form-group"><label className="form-label">10th CGPA/Percentage</label><input className="form-input" placeholder="e.g. 9.5 or 90%" value={data.tenth_cgpa} onChange={e => up('tenth_cgpa', e.target.value)} /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label className="form-label">Inter/12th Stream</label><input className="form-input" placeholder="e.g. MPC, BiPC" value={data.inter_stream} onChange={e => up('inter_stream', e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Inter/12th College Name</label><input className="form-input" placeholder="College Name" value={data.inter_college_name} onChange={e => up('inter_college_name', e.target.value)} /></div>
+              <div className="form-group"><label className="form-label">Inter/12th Stream</label><input className="form-input" placeholder="e.g. MPC, BiPC" value={data.inter_stream} onChange={e => up('inter_stream', e.target.value)} /></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Inter/12th CGPA</label><input className="form-input" placeholder="e.g. 9.0" value={data.inter_cgpa} onChange={e => up('inter_cgpa', e.target.value)} /></div>
-              <div className="form-group"><label className="form-label">Degree Name</label><input className="form-input" placeholder="e.g. B.Tech" value={data.degree_name} onChange={e => up('degree_name', e.target.value)} /></div>
             </div>
             <div className="form-row">
+              <div className="form-group"><label className="form-label">Degree Name</label><input className="form-input" placeholder="e.g. B.Tech" value={data.degree_name} onChange={e => up('degree_name', e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Degree College Name</label><input className="form-input" placeholder="College Name" value={data.degree_college_name} onChange={e => up('degree_college_name', e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Degree CGPA</label><input className="form-input" placeholder="e.g. 8.5" value={data.degree_cgpa} onChange={e => up('degree_cgpa', e.target.value)} /></div>
             </div>

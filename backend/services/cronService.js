@@ -73,12 +73,76 @@ async function checkAndGenerateLoyaltyFees(refDate = new Date()) {
   }
 }
 
+/**
+ * Automates annual grade increments for students based on their board.
+ * CBSE/ICSE increment on April 1st.
+ * AP State increment on June 1st.
+ */
+async function checkAndIncrementGrades(refDate = new Date()) {
+  const dateObj = new Date(refDate);
+  const month = dateObj.getMonth(); // 0-indexed (April is 3, June is 5)
+  const day = dateObj.getDate();
+  
+  if (day !== 1) return; // Only run on the 1st of the month
+  
+  let boardsToUpdate = [];
+  if (month === 3) {
+    boardsToUpdate = ['CBSE', 'ICSE'];
+  } else if (month === 5) {
+    boardsToUpdate = ['AP State'];
+  }
+  
+  if (boardsToUpdate.length === 0) return;
+  
+  console.log(`[Cron Job] 🕒 Running Annual Grade Increment for ${boardsToUpdate.join(', ')}`);
+  
+  try {
+    // 1. Identify students transitioning to 12th grade or completing 12th grade
+    const graduatingRes = await db.query(
+      `SELECT s_id, s_name, s_grade 
+       FROM student_personal_info 
+       WHERE s_board = ANY($1) AND CAST(NULLIF(regexp_replace(s_grade, '\\D', '', 'g'), '') AS INTEGER) >= 11`,
+      [boardsToUpdate]
+    );
+    
+    // 2. Increment grades (only for those < 12)
+    await db.query(
+      `UPDATE student_personal_info
+       SET s_grade = (CAST(NULLIF(regexp_replace(s_grade, '\\D', '', 'g'), '') AS INTEGER) + 1)::VARCHAR
+       WHERE s_board = ANY($1) AND CAST(NULLIF(regexp_replace(s_grade, '\\D', '', 'g'), '') AS INTEGER) < 12`,
+      [boardsToUpdate]
+    );
+    
+    // 3. Generate notifications for graduating/completed students
+    for (const student of graduatingRes.rows) {
+      const currentGrade = parseInt(student.s_grade.replace(/\D/g, '')) || 0;
+      let message = '';
+      if (currentGrade === 11) {
+        message = `Student ${student.s_name} has been promoted to 12th grade.`;
+      } else if (currentGrade >= 12) {
+        message = `Student ${student.s_name} has completed 12th grade and their academic year is finished.`;
+      }
+      
+      if (message) {
+        await db.query(
+          `INSERT INTO admin_notifications (title, message, type) VALUES ($1, $2, 'info')`,
+          ['Student Grade Update', message]
+        );
+      }
+    }
+    console.log(`[Cron Job] ✅ Grade increments and notifications completed.`);
+  } catch (err) {
+    console.error(`[Cron Job] ❌ Error in checkAndIncrementGrades:`, err);
+  }
+}
+
 // Schedule the cron job to run every day at midnight (0 0 * * *)
 function startCronJob() {
   console.log('[Cron Job] 🚀 Scheduling daily job at midnight (0 0 * * *)');
   cron.schedule('0 0 * * *', async () => {
     try {
       await checkAndGenerateLoyaltyFees();
+      await checkAndIncrementGrades();
     } catch (err) {
       // Error already logged inside function
     }
@@ -87,5 +151,6 @@ function startCronJob() {
 
 module.exports = {
   startCronJob,
-  checkAndGenerateLoyaltyFees
+  checkAndGenerateLoyaltyFees,
+  checkAndIncrementGrades
 };

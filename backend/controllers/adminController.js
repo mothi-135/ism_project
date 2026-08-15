@@ -22,6 +22,20 @@ exports.getAdminById = async (req, res) => {
   }
 };
 
+exports.getNotifications = async (req, res) => {
+  try {
+    const notificationsRes = await db.query(
+      `SELECT id, title, message, type, is_read, created_at 
+       FROM admin_notifications 
+       ORDER BY created_at DESC LIMIT 50`
+    );
+    res.json(notificationsRes.rows);
+  } catch (err) {
+    console.error('Error fetching notifications:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.assignTutor = async (req, res) => {
   const { studentId, tutorId } = req.body;
   try {

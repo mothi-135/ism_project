@@ -5,6 +5,7 @@ export const GlobalAdminDashboard = ({ page }) => {
   const [allStudents, setAllStudents] = useState([]);
   const [allTutors, setAllTutors] = useState([]);
   const [allAdmins, setAllAdmins] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchAttr, setSearchAttr] = useState('name');
@@ -23,6 +24,7 @@ export const GlobalAdminDashboard = ({ page }) => {
     fetch(`${API_URL}/api/students`).then(r=>r.json()).then(setAllStudents);
     fetch(`${API_URL}/api/tutors`).then(r=>r.json()).then(setAllTutors);
     fetch(`${API_URL}/api/admins`).then(r=>r.json()).then(setAllAdmins);
+    fetch(`${API_URL}/api/admin/notifications`).then(r=>{if(r.ok)return r.json();return [];}).then(data=>{if(Array.isArray(data))setNotifications(data);}).catch(console.error);
   };
 
   useEffect(() => {
@@ -51,6 +53,21 @@ export const GlobalAdminDashboard = ({ page }) => {
           <tr key={a.id}><td><div className="flex gap-8"><div className={`avatar ${avatarColor(a.id)}`}>{initials(a.name)}</div><span style={{fontWeight:500,color:'var(--text)'}}>{a.name}</span></div></td><td><span className="badge badge-accent">{a.town}</span></td><td>{a.students}</td><td>{a.tutors}</td><td style={{color:'var(--accent2)'}}>{a.phone}</td></tr>
         ))}</tbody></table></div>
       </div>
+      
+      {notifications.length > 0 && (
+        <div className="card">
+          <div style={{fontWeight:500,marginBottom:16}}>System Notifications</div>
+          <div className="flex" style={{flexDirection: 'column', gap: 12}}>
+            {notifications.slice(0,5).map(n => (
+              <div key={n.id} style={{padding: '12px', background: 'var(--bg2)', borderRadius: 'var(--radius)', borderLeft: '4px solid var(--accent)'}}>
+                <div style={{fontWeight: 600, color: 'var(--accent)'}}>{n.title}</div>
+                <div style={{fontSize: 14, color: 'var(--text2)', marginTop: 4}}>{n.message}</div>
+                <div style={{fontSize: 11, color: 'var(--text3)', marginTop: 8}}>{new Date(n.created_at).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 

@@ -158,17 +158,10 @@ const LoginPage = ({ onLogin, onBack }) => {
               <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handle()} />
             </div>
             <button className="btn btn-primary w-full" onClick={handle}>Sign In →</button>
-          </div>
-          <div className="credentials-hint">
-            <strong>Demo Credentials</strong><br />
-            <strong>Student:</strong> student1@example.com / ism@123<br />
-            <strong>Tutor:</strong> tutor1@example.com / ism@123<br />
-            <strong>Admin:</strong> mothi@gmail.com / ism@123<br />
-            <strong>Global Admin:</strong> sravan@gmail.com / ism@123
-          </div>
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

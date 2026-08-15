@@ -7,6 +7,7 @@ export const AdminDashboard = ({ user, page }) => {
   const [townTutors, setTownTutors] = useState([]);
   const [matchStudent, setMatchStudent] = useState('');
   const [matchResults, setMatchResults] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchAttr, setSearchAttr] = useState('name');
@@ -30,6 +31,16 @@ export const AdminDashboard = ({ user, page }) => {
       .then(data => {
         setAdmin(data);
       });
+      
+    fetch(`${API_URL}/api/admin/notifications`)
+      .then(res => {
+        if (!res.ok) return [];
+        return res.json();
+      })
+      .then(data => {
+        if(Array.isArray(data)) setNotifications(data);
+      })
+      .catch(err => console.error(err));
   }, [user.id]);
 
   const refreshData = () => {
@@ -88,6 +99,21 @@ export const AdminDashboard = ({ user, page }) => {
           return <tr key={s.id}><td><div className="flex gap-8"><div className={`avatar ${avatarColor(s.id)}`}>{initials(s.name)}</div><span style={{color:'var(--text)',fontWeight:500}}>{s.name}</span></div></td><td>{s.grade}</td><td><SubjectTags subjects={s.weakSubjects} /></td><td>{t?t.name:<span style={{color:'var(--warn)'}}>Unassigned</span>}</td><td><StatusBadge status={s.feesPaid?'paid':'unpaid'} /></td><td><StatusBadge status={s.status} /></td></tr>;
         })}</tbody></table></div>
       </div>
+      
+      {notifications.length > 0 && (
+        <div className="card mt-24">
+          <div style={{fontWeight:500,marginBottom:16}}>System Notifications</div>
+          <div className="flex" style={{flexDirection: 'column', gap: 12}}>
+            {notifications.slice(0,5).map(n => (
+              <div key={n.id} style={{padding: '12px', background: 'var(--bg2)', borderRadius: 'var(--radius)', borderLeft: '4px solid var(--accent)'}}>
+                <div style={{fontWeight: 600, color: 'var(--accent)'}}>{n.title}</div>
+                <div style={{fontSize: 14, color: 'var(--text2)', marginTop: 4}}>{n.message}</div>
+                <div style={{fontSize: 11, color: 'var(--text3)', marginTop: 8}}>{new Date(n.created_at).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 

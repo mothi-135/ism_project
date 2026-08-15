@@ -224,8 +224,8 @@ const StudentModel = {
 
     // 2. Insert into student_personal_info
     await db.query(
-      `INSERT INTO student_personal_info (s_id, s_name, s_adhaar_num, s_gender, s_grade, s_school_name, s_school_city, s_caste, s_religion, s_board)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO student_personal_info (s_id, s_name, s_adhaar_num, s_gender, s_grade, s_school_name, s_school_city, s_caste, s_religion, s_board, s_academic_year)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         userId,
         (studentData.name || 'Student').slice(0, 50),
@@ -236,7 +236,8 @@ const StudentModel = {
         cleanSchoolCity,
         cleanCaste,
         cleanReligion,
-        (studentData.board || 'CBSE').slice(0, 50)
+        (studentData.board || 'CBSE').slice(0, 50),
+        (studentData.academicYear || '').slice(0, 20)
       ]
     );
 

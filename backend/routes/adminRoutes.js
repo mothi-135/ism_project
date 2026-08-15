@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 
 router.get('/', adminController.getAllAdmins);
+router.get('/notifications', adminController.getNotifications);
 router.get('/:id', adminController.getAdminById);
 router.post('/assign', adminController.assignTutor);
 

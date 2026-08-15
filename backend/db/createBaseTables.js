@@ -27,6 +27,10 @@ async function createBaseTables(client) {
       city_name VARCHAR(100) DEFAULT 'Nellore'
     );
   `);
+  await client.query(`
+    ALTER TABLE IF EXISTS locations 
+      ADD COLUMN IF NOT EXISTS city_name VARCHAR(100) DEFAULT 'Nellore';
+  `);
 
   // 3. Pincodes table
   await client.query(`
@@ -39,6 +43,14 @@ async function createBaseTables(client) {
   await client.query(`
     ALTER TABLE IF EXISTS pincodes 
       ALTER COLUMN pincode TYPE VARCHAR(20) USING pincode::VARCHAR;
+  `);
+  await client.query(`
+    DO $$ 
+    BEGIN 
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'unique_pincode') THEN
+        ALTER TABLE pincodes ADD CONSTRAINT unique_pincode UNIQUE (pincode);
+      END IF; 
+    END $$;
   `);
 
   // 4. Users table
@@ -53,6 +65,10 @@ async function createBaseTables(client) {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  await client.query(`
+    ALTER TABLE IF EXISTS users 
+      ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+  `);
 
   // 5. Student Personal Info
   await client.query(`
@@ -61,6 +77,7 @@ async function createBaseTables(client) {
       s_name VARCHAR(150) NOT NULL,
       s_gender VARCHAR(20),
       s_grade VARCHAR(50),
+      s_academic_year VARCHAR(20),
       school_name VARCHAR(150),
       s_school_name VARCHAR(150),
       s_school_city VARCHAR(50),
@@ -88,12 +105,29 @@ async function createBaseTables(client) {
   `);
   await client.query(`
     ALTER TABLE IF EXISTS student_personal_info 
+      ADD COLUMN IF NOT EXISTS school_name VARCHAR(150),
       ADD COLUMN IF NOT EXISTS s_school_name VARCHAR(150),
       ADD COLUMN IF NOT EXISTS s_school_city VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS board VARCHAR(150),
       ADD COLUMN IF NOT EXISTS s_board VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS parent_name VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS phone VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS address TEXT,
+      ADD COLUMN IF NOT EXISTS landmark VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS aadhaar VARCHAR(20),
       ADD COLUMN IF NOT EXISTS s_adhaar_num VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS caste VARCHAR(50),
       ADD COLUMN IF NOT EXISTS s_caste VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS s_religion VARCHAR(50);
+      ADD COLUMN IF NOT EXISTS religion VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS s_religion VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS father_name VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS father_phone VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS father_occupation VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS mother_name VARCHAR(150),
+      ADD COLUMN IF NOT EXISTS mother_phone VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS mother_occupation VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS additional_requirements TEXT,
+      ADD COLUMN IF NOT EXISTS s_academic_year VARCHAR(20);
   `);
 
   // 5b. Student Parent Info
@@ -373,9 +407,15 @@ async function createBaseTables(client) {
 
   // 3. Student: student1@example.com / ism@123
   const sId = await upsertDemoUser('student1@example.com', 'ism@123', 3, 1);
+  await client.query('ALTER TABLE student_parent_info DROP CONSTRAINT IF EXISTS uq_student_parent_info_s_id');
+  await client.query('ALTER TABLE student_parent_info ADD CONSTRAINT uq_student_parent_info_s_id UNIQUE(s_id)');
+  
+  await client.query('ALTER TABLE tutor_education_info DROP CONSTRAINT IF EXISTS uq_tutor_education_info_t_id');
+  await client.query('ALTER TABLE tutor_education_info ADD CONSTRAINT uq_tutor_education_info_t_id UNIQUE(t_id)');
+
   await client.query(`
-    INSERT INTO student_personal_info (s_id, s_name, s_gender, s_grade, school_name, s_school_name, board, s_board, parent_name, phone, address, landmark)
-    VALUES ($1, 'Demo Student One', 'Male', '10th', 'St. Johns High School', 'St. Johns High School', 'CBSE', 'CBSE', 'Parent One', '9876543210', '123 Student Street, Naidupet', 'Near Clock Tower')
+    INSERT INTO student_personal_info (s_id, s_name, s_adhaar_num, s_gender, s_grade, s_school_name, s_school_city, s_caste, s_religion, s_board)
+    VALUES ($1, 'Demo Student One', '123456789012', 'M', '10', 'St. Johns High School', 'Naidupet', 'OBC', 'HINDU', 'CBSE')
     ON CONFLICT (s_id) DO UPDATE SET s_school_name = EXCLUDED.s_school_name, s_board = EXCLUDED.s_board;
   `, [sId]);
   await client.query(`
@@ -387,15 +427,26 @@ async function createBaseTables(client) {
   // 4. Tutor: tutor1@example.com / ism@123
   const tId = await upsertDemoUser('tutor1@example.com', 'ism@123', 4, 1);
   await client.query(`
-    INSERT INTO tutor_personal_info (t_id, t_name, gender, t_gender, qualification, experience_years, phone, t_phone, address, landmark, loyalty_points, is_verified, t_caste, t_religion)
-    VALUES ($1, 'Demo Tutor One', 'Female', 'Female', 'M.Sc Mathematics', 5, '9123456789', '9123456789', '456 Tutor Avenue, Naidupet', 'Near Railway Station', 100, TRUE, 'OBC', 'HINDU')
+    INSERT INTO tutor_personal_info (t_id, t_name, t_adhaar_num, t_gender, t_caste, t_religion, t_phone)
+    VALUES ($1, 'Demo Tutor One', '987654321098', 'F', 'OBC', 'HINDU', '9123456789')
     ON CONFLICT (t_id) DO UPDATE SET t_gender = EXCLUDED.t_gender, t_phone = EXCLUDED.t_phone, t_caste = EXCLUDED.t_caste, t_religion = EXCLUDED.t_religion;
   `, [tId]);
   await client.query(`
-    INSERT INTO tutor_education_info (t_id, tenth_school_name, tenth_cgpa, inter_stream, inter_clg_name, inter_cgpa, deg_name, deg_clg_name, deg_cpga, deg_cgpa, deg_passing_year, occupation, experience)
-    VALUES ($1, 'ZPHS School', 9.5, 'MPC', 'Junior College', 9.2, 'M.Sc Mathematics', 'University', 8.5, 8.5, 2018, 'Teacher', '5 years')
+    INSERT INTO tutor_education_info (t_id, tenth_school_name, tenth_cgpa, inter_stream, inter_clg_name, inter_cgpa, deg_name, deg_clg_name, deg_cpga, deg_passing_year, occupation, experience)
+    VALUES ($1, 'ZPHS School', 9.5, 'MPC', 'Junior College', 9.2, 'M.Sc', 'University', 8.5, 2018, 'Teacher', '5 years')
     ON CONFLICT (t_id) DO NOTHING;
   `, [tId]);
+  // 17. Admin Notifications Table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS admin_notifications (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      type VARCHAR(50) DEFAULT 'info',
+      is_read BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 
   console.log('✅ Base database schema and Demo Credentials verified and created successfully!');
 }
