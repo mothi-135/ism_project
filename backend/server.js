@@ -36,11 +36,17 @@ const initializeDatabase = require('./db/initDb');
 const cronService = require('./services/cronService');
 
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes); // Direct route alias for deployed frontends
 app.use('/api/students', studentRoutes);
+app.use('/students', studentRoutes);
 app.use('/api/tutors', tutorRoutes);
+app.use('/tutors', tutorRoutes);
 app.use('/api/admins', adminRoutes);
+app.use('/admins', adminRoutes);
 app.use('/api/admin', adminRoutes); // Support singular '/api/admin' paths as well
+app.use('/admin', adminRoutes);
 app.use('/api/dev', devRoutes); // Expose dev routes
+app.use('/dev', devRoutes);
 
 app.get('/', (req, res) => {
   res.send('ISM Web App API Running...');
@@ -70,7 +76,8 @@ app.listen(PORT, async (err) => {
   // Verify database connectivity
   try {
     const result = await db.query('SELECT NOW()');
-    console.log(`✅ Database connected successfully (${process.env.DB_NAME}) at ${result.rows[0].now}`);
+    const dbTarget = process.env.DATABASE_URL ? 'Neon / Cloud DB' : (process.env.DB_NAME || 'PostgreSQL');
+    console.log(`✅ Database connected successfully (${dbTarget}) at ${result.rows[0].now}`);
   } catch (dbErr) {
     console.error('❌ Database connection failed:', dbErr.message);
   }

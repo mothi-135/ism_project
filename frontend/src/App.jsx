@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Navbar, Sidebar, initials, avatarColor, API_URL } from './components/Shared';
+import API_BASE_URL from './config/api';
 import { StudentForm, TutorForm } from './components/Forms';
 import { AdminDashboard } from './components/AdminDashboard';
 import { GlobalAdminDashboard } from './components/GlobalAdminDashboard';
@@ -123,21 +124,27 @@ const LoginPage = ({ onLogin, onBack }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handle = () => {
-    fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.user) {
-          onLogin(data.user);
-        } else {
-          setError(data.message || 'Invalid credentials');
-        }
-      })
-      .catch(err => setError('Server error. Make sure backend is running.'));
+  const handle = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      });
+      const data = await response.json();
+      if (data.user) {
+        onLogin(data.user);
+      } else {
+        setError(data.message || 'Invalid credentials');
+      }
+    } catch (err) {
+      setError('Server error. Make sure backend is running.');
+    }
   };
 
   return (

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import API_BASE_URL from '../config/api';
 
-export const API_URL = (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_API_URL || import.meta.env.REACT_APP_API_URL)) || (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.VITE_API_URL)) || 'http://localhost:5000';
+export { API_BASE_URL };
+export const API_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export const initials = (name) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
