@@ -231,7 +231,7 @@ export const StudentDetailView = ({ student, tutor, onBack }) => {
   );
 };
 
-export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) => {
+export const TutorDetailView = ({ tutor, assignedStudents = [], onBack, onRefresh }) => {
   const [loyaltyPayments, setLoyaltyPayments] = useState(tutor?.loyalty || []);
   const [showAddLoyalty, setShowAddLoyalty] = useState(false);
   const [loyaltyForm, setLoyaltyForm] = useState({ studentId: '', date: '', amount: '', notes: '' });
@@ -257,7 +257,7 @@ export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) 
     })
       .then(res => {
         if (res.ok) {
-          const selectedStudentObj = assignedStudents.find(s => s.id === loyaltyForm.studentId);
+          const selectedStudentObj = (assignedStudents || []).find(s => s.id === loyaltyForm.studentId);
           const studentName = selectedStudentObj ? selectedStudentObj.name : '';
           setLoyaltyPayments(prev => [
             {

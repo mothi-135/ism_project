@@ -21,10 +21,22 @@ export const GlobalAdminDashboard = ({ page }) => {
   const [feeYear, setFeeYear] = useState(new Date().getFullYear());
   
   const refreshData = () => {
-    fetch(`${API_URL}/api/students`).then(r=>r.json()).then(setAllStudents);
-    fetch(`${API_URL}/api/tutors`).then(r=>r.json()).then(setAllTutors);
-    fetch(`${API_URL}/api/admins`).then(r=>r.json()).then(setAllAdmins);
-    fetch(`${API_URL}/api/admin/notifications`).then(r=>{if(r.ok)return r.json();return [];}).then(data=>{if(Array.isArray(data))setNotifications(data);}).catch(console.error);
+    fetch(`${API_URL}/api/students`)
+      .then(r=>r.json())
+      .then(d => setAllStudents(Array.isArray(d) ? d : []))
+      .catch(e => { console.error('Error fetching students:', e); setAllStudents([]); });
+    fetch(`${API_URL}/api/tutors`)
+      .then(r=>r.json())
+      .then(d => setAllTutors(Array.isArray(d) ? d : []))
+      .catch(e => { console.error('Error fetching tutors:', e); setAllTutors([]); });
+    fetch(`${API_URL}/api/admins`)
+      .then(r=>r.json())
+      .then(d => setAllAdmins(Array.isArray(d) ? d : []))
+      .catch(e => { console.error('Error fetching admins:', e); setAllAdmins([]); });
+    fetch(`${API_URL}/api/admin/notifications`)
+      .then(r=>{if(r.ok)return r.json();return [];})
+      .then(data=>{if(Array.isArray(data))setNotifications(data);})
+      .catch(console.error);
   };
 
   useEffect(() => {
@@ -36,10 +48,10 @@ export const GlobalAdminDashboard = ({ page }) => {
     setSelectedTutor(null);
   }, [page]);
 
-  const totalStudents = allStudents.length;
-  const totalTutors = allTutors.length;
-  const totalRevenue = allStudents.filter(s=>s.feesPaid).reduce((a,s)=>a+s.fees,0);
-  const pending = allStudents.filter(s=>!s.tutor).length;
+  const totalStudents = (allStudents || []).length;
+  const totalTutors = (allTutors || []).length;
+  const totalRevenue = (allStudents || []).filter(s=>s.feesPaid).reduce((a,s)=>a+s.fees,0);
+  const pending = (allStudents || []).filter(s=>!s.tutor).length;
 
   if (page==='dashboard') return (
     <div>
@@ -99,12 +111,12 @@ export const GlobalAdminDashboard = ({ page }) => {
 
   if (page==='students') {
     if (selectedStudent) {
-      const currentStudent = allStudents.find(s => s.id === selectedStudent.id) || selectedStudent;
-      const t = allTutors.find(x=>x.id===currentStudent.tutor);
+      const currentStudent = (allStudents || []).find(s => s.id === selectedStudent.id) || selectedStudent;
+      const t = (allTutors || []).find(x=>x.id===currentStudent.tutor);
       return <StudentDetailView student={currentStudent} tutor={t} onBack={()=>setSelectedStudent(null)} />;
     }
 
-    let filtered = allStudents;
+    let filtered = allStudents || [];
     if (filterAssigned === 'assigned') filtered = filtered.filter(s => s.tutor);
     else if (filterAssigned === 'unassigned') filtered = filtered.filter(s => !s.tutor);
 
@@ -121,7 +133,7 @@ export const GlobalAdminDashboard = ({ page }) => {
     return (
       <div>
         <div className="flex-between mb-24">
-          <div><div className="page-title">All Students</div><div className="page-sub">{allStudents.length} students across 4 towns.</div></div>
+          <div><div className="page-title">All Students</div><div className="page-sub">{(allStudents || []).length} students across 4 towns.</div></div>
           <div className="flex gap-12">
             <button className={`btn btn-sm ${filterAssigned==='all'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterAssigned('all')}>All</button>
             <button className={`btn btn-sm ${filterAssigned==='assigned'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterAssigned('assigned')}>Assigned</button>
@@ -141,7 +153,7 @@ export const GlobalAdminDashboard = ({ page }) => {
           </div>
           <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Town</th><th>Grade</th><th>Board</th><th>Tutor</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>{filtered.map(s=>{
-            const t=allTutors.find(x=>x.id===s.tutor);
+            const t=(allTutors || []).find(x=>x.id===s.tutor);
             return <tr key={s.id}><td style={{color:'var(--text3)'}}>{s.id}</td><td><div className="flex gap-8"><div className={`avatar ${avatarColor(s.id)}`}>{initials(s.name)}</div><div><div style={{fontWeight:500,color:'var(--text)'}}>{s.name}</div><div style={{fontSize:11,color:'var(--text3)'}}>{s.parent}</div></div></div></td><td><span className="badge badge-accent">{s.town}</span></td><td>{s.grade}</td><td>{s.board}</td><td>{t?t.name:<span style={{color:'var(--warn)'}}>None</span>}</td><td><StatusBadge status={s.status} /></td><td><button className="btn btn-sm" onClick={()=>setSelectedStudent(s)}>View</button></td></tr>;
           })}</tbody></table></div>
         </div>
@@ -151,14 +163,14 @@ export const GlobalAdminDashboard = ({ page }) => {
 
   if (page==='tutors') {
     if (selectedTutor) {
-      const currentTutor = allTutors.find(t => t.id === selectedTutor.id) || selectedTutor;
-      const assigned = allStudents.filter(s => s.tutor === currentTutor.id);
+      const currentTutor = (allTutors || []).find(t => t.id === selectedTutor.id) || selectedTutor;
+      const assigned = (allStudents || []).filter(s => s.tutor === currentTutor.id);
       return <TutorDetailView tutor={currentTutor} assignedStudents={assigned} onBack={()=>setSelectedTutor(null)} onRefresh={refreshData} />;
     }
 
-    let filtered = allTutors;
-    if (filterTutorAssigned === 'assigned') filtered = filtered.filter(t => t.students.length > 0);
-    else if (filterTutorAssigned === 'unassigned') filtered = filtered.filter(t => t.students.length === 0);
+    let filtered = allTutors || [];
+    if (filterTutorAssigned === 'assigned') filtered = filtered.filter(t => (t.students || []).length > 0);
+    else if (filterTutorAssigned === 'unassigned') filtered = filtered.filter(t => (t.students || []).length === 0);
 
     if (searchTutorQuery.trim()) {
       const q = searchTutorQuery.toLowerCase();
@@ -173,7 +185,7 @@ export const GlobalAdminDashboard = ({ page }) => {
     return (
       <div>
         <div className="flex-between mb-24">
-          <div><div className="page-title">All Tutors</div><div className="page-sub">{allTutors.length} tutors across the network.</div></div>
+          <div><div className="page-title">All Tutors</div><div className="page-sub">{(allTutors || []).length} tutors across the network.</div></div>
           <div className="flex gap-12">
             <button className={`btn btn-sm ${filterTutorAssigned==='all'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterTutorAssigned('all')}>All</button>
             <button className={`btn btn-sm ${filterTutorAssigned==='assigned'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterTutorAssigned('assigned')}>Assigned</button>
@@ -192,7 +204,7 @@ export const GlobalAdminDashboard = ({ page }) => {
           </div>
           <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Town</th><th>Subjects</th><th>Grades</th><th>Students</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>{filtered.map(t=>(
-            <tr key={t.id}><td style={{color:'var(--text3)'}}>{t.id}</td><td><div className="flex gap-8"><div className={`avatar ${avatarColor(t.id)}`}>{initials(t.name)}</div><div><div style={{fontWeight:500,color:'var(--text)'}}>{t.name}</div><div style={{fontSize:11,color:'var(--text3)'}}>{t.qualification}</div></div></div></td><td><span className="badge badge-accent">{t.town}</span></td><td><SubjectTags subjects={t.subjects} /></td><td>{t.grades}</td><td>{t.students.length}</td><td><StatusBadge status={t.status} /></td><td><button className="btn btn-sm" onClick={()=>setSelectedTutor(t)}>View</button></td></tr>
+            <tr key={t.id}><td style={{color:'var(--text3)'}}>{t.id}</td><td><div className="flex gap-8"><div className={`avatar ${avatarColor(t.id)}`}>{initials(t.name)}</div><div><div style={{fontWeight:500,color:'var(--text)'}}>{t.name}</div><div style={{fontSize:11,color:'var(--text3)'}}>{t.qualification}</div></div></div></td><td><span className="badge badge-accent">{t.town}</span></td><td><SubjectTags subjects={t.subjects || []} /></td><td>{t.grades}</td><td>{(t.students || []).length}</td><td><StatusBadge status={t.status} /></td><td><button className="btn btn-sm" onClick={()=>setSelectedTutor(t)}>View</button></td></tr>
           ))}</tbody></table></div>
         </div>
       </div>
@@ -200,10 +212,10 @@ export const GlobalAdminDashboard = ({ page }) => {
   }
 
   if (page==='finance') {
-    const assignedStudents = allStudents.filter(s => s.tutor);
+    const assignedStudents = (allStudents || []).filter(s => s.tutor);
     const targetAmount = assignedStudents.reduce((acc, s) => acc + (s.fees * 0.10), 0);
 
-    const totalLoyaltyPaid = allTutors.reduce((acc, t) => {
+    const totalLoyaltyPaid = (allTutors || []).reduce((acc, t) => {
       const monthLoyalty = (t.loyalty || []).filter(p => {
         const d = new Date(p.date);
         return (d.getMonth() + 1) === feeMonth && d.getFullYear() === feeYear;

@@ -12,7 +12,8 @@ exports.getAllTutors = async (req, res) => {
     }
     res.json(tutors);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching tutors in getAllTutors:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -22,7 +23,8 @@ exports.getTutorById = async (req, res) => {
     if (!tutor) return res.status(404).json({ message: 'Tutor not found' });
     res.json(tutor);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error in getTutorById:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 

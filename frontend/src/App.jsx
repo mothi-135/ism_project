@@ -265,20 +265,52 @@ const DashboardShell = ({ session, onLogout }) => {
   );
 };
 
+const SESSION_STORAGE_KEY = 'ism_user_session';
+
 export default function App() {
-  const [view, setView] = useState('landing');
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [view, setView] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+      return saved ? 'dashboard' : 'landing';
+    } catch (e) {
+      return 'landing';
+    }
+  });
 
   const handleLogin = (user) => {
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+    } catch (e) {
+      console.error('Failed to save session to localStorage:', e);
+    }
     setSession(user);
     setView('dashboard');
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (e) {
+      console.error('Failed to remove session from localStorage:', e);
+    }
+    setSession(null);
+    setView('landing');
   };
 
   return (
     <div className="app">
       {view === 'landing' && <LandingPage onLogin={() => setView('login')} />}
       {view === 'login' && <LoginPage onLogin={handleLogin} onBack={() => setView('landing')} />}
-      {view === 'dashboard' && session && <DashboardShell session={session} onLogout={() => { setSession(null); setView('landing'); }} />}
+      {view === 'dashboard' && session && <DashboardShell session={session} onLogout={handleLogout} />}
     </div>
   );
 }

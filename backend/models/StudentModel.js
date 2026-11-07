@@ -47,10 +47,17 @@ function mapDbRowToStudent(row) {
   // Format grade correctly (e.g. 9 -> "9th")
   let gradeStr = '9th';
   if (row.grade) {
-    if (row.grade === 1) gradeStr = '1st';
-    else if (row.grade === 2) gradeStr = '2nd';
-    else if (row.grade === 3) gradeStr = '3rd';
-    else gradeStr = `${row.grade}th`;
+    const rawGrade = String(row.grade).trim();
+    if (/^\d+(st|nd|rd|th)$/i.test(rawGrade)) {
+      gradeStr = rawGrade;
+    } else {
+      const gNum = parseInt(rawGrade);
+      if (gNum === 1) gradeStr = '1st';
+      else if (gNum === 2) gradeStr = '2nd';
+      else if (gNum === 3) gradeStr = '3rd';
+      else if (!isNaN(gNum)) gradeStr = `${gNum}th`;
+      else gradeStr = rawGrade;
+    }
   }
 
   // Determine slot string
@@ -58,9 +65,10 @@ function mapDbRowToStudent(row) {
   if (row.slot_ids && row.slot_ids.length > 0) {
     if (row.slot_ids.includes(1)) slotsArray.push('5:30 am - 7:30 am');
     if (row.slot_ids.includes(4)) slotsArray.push('5:30 pm - 7:30 pm');
+    else if (row.slot_ids.includes(3)) slotsArray.push('5:00 pm - 7:00 pm');
     if (row.slot_ids.includes(8)) slotsArray.push('7:30 pm - 9:00 pm');
   }
-  const slotStr = slotsArray.length > 0 ? slotsArray.join(', ') : 'Unassigned';
+  const slotStr = slotsArray.length > 0 ? slotsArray.join(', ') : (row.slot_ids?.length ? 'Flexible Evening' : 'Unassigned');
 
   return {
     id: `S${String(row.id).padStart(3, '0')}`,
@@ -111,12 +119,12 @@ const StudentModel = {
         u.user_id as id,
         spi.s_name as name,
         spi.s_gender as gender,
-        COALESCE(spi.s_adhaar_num, spi.aadhaar, '') as aadhaar,
+        COALESCE(spi.s_adhaar_num, '') as aadhaar,
         COALESCE(spi.s_school_city, '') as "schoolCity",
         COALESCE(spi.s_academic_year, '') as "academicYear",
-        COALESCE(spi.s_caste, spi.caste, '') as caste,
-        COALESCE(spi.s_religion, spi.religion, '') as religion,
-        COALESCE(s_par.father_name, s_par.father_name, '') as "fatherName",
+        COALESCE(spi.s_caste, '') as caste,
+        COALESCE(spi.s_religion, '') as religion,
+        COALESCE(s_par.father_name, '') as "fatherName",
         COALESCE(s_par.father_mobile, '') as "fatherPhone",
         COALESCE(s_par.father_occupation, '') as "fatherOccupation",
         COALESCE(s_par.mother_name, '') as "motherName",
@@ -129,8 +137,8 @@ const StudentModel = {
         u.created_at as "joiningDate",
         u.email,
         spi.s_grade as grade,
-        COALESCE(spi.s_school_name, spi.school_name, '') as school,
-        COALESCE(spi.s_board, spi.board, '') as board,
+        COALESCE(spi.s_school_name, '') as school,
+        COALESCE(spi.s_board, '') as board,
         sp.additional_requirements as "additionalRequirements",
         l.location_name as town,
         ai.t_id as tutor,
@@ -176,12 +184,12 @@ const StudentModel = {
         u.user_id as id,
         spi.s_name as name,
         spi.s_gender as gender,
-        COALESCE(spi.s_adhaar_num, spi.aadhaar, '') as aadhaar,
+        COALESCE(spi.s_adhaar_num, '') as aadhaar,
         COALESCE(spi.s_school_city, '') as "schoolCity",
         COALESCE(spi.s_academic_year, '') as "academicYear",
-        COALESCE(spi.s_caste, spi.caste, '') as caste,
-        COALESCE(spi.s_religion, spi.religion, '') as religion,
-        COALESCE(s_par.father_name, s_par.father_name, '') as "fatherName",
+        COALESCE(spi.s_caste, '') as caste,
+        COALESCE(spi.s_religion, '') as religion,
+        COALESCE(s_par.father_name, '') as "fatherName",
         COALESCE(s_par.father_mobile, '') as "fatherPhone",
         COALESCE(s_par.father_occupation, '') as "fatherOccupation",
         COALESCE(s_par.mother_name, '') as "motherName",
@@ -194,8 +202,8 @@ const StudentModel = {
         u.created_at as "joiningDate",
         u.email,
         spi.s_grade as grade,
-        COALESCE(spi.s_school_name, spi.school_name, '') as school,
-        COALESCE(spi.s_board, spi.board, '') as board,
+        COALESCE(spi.s_school_name, '') as school,
+        COALESCE(spi.s_board, '') as board,
         sp.additional_requirements as "additionalRequirements",
         l.location_name as town,
         ai.t_id as tutor,

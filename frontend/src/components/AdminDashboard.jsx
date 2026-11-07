@@ -45,8 +45,20 @@ export const AdminDashboard = ({ user, page }) => {
 
   const refreshData = () => {
     if (admin?.town) {
-      fetch(`${API_URL}/api/students?town=${admin.town}&month=${feeMonth}&year=${feeYear}`).then(r=>r.json()).then(setTownStudents);
-      fetch(`${API_URL}/api/tutors?town=${admin.town}`).then(r=>r.json()).then(setTownTutors);
+      fetch(`${API_URL}/api/students?town=${admin.town}&month=${feeMonth}&year=${feeYear}`)
+        .then(r => r.json())
+        .then(data => setTownStudents(Array.isArray(data) ? data : []))
+        .catch(err => {
+          console.error('Error fetching town students:', err);
+          setTownStudents([]);
+        });
+      fetch(`${API_URL}/api/tutors?town=${admin.town}`)
+        .then(r => r.json())
+        .then(data => setTownTutors(Array.isArray(data) ? data : []))
+        .catch(err => {
+          console.error('Error fetching town tutors:', err);
+          setTownTutors([]);
+        });
     }
   };
 
@@ -60,18 +72,18 @@ export const AdminDashboard = ({ user, page }) => {
   }, [page]);
 
   const runMatch = () => {
-    const s = townStudents.find(x=>x.id===matchStudent);
+    const s = (townStudents || []).find(x=>x.id===matchStudent);
     if (!s) return;
-    const results = townTutors.filter(t => t.town===s.town && t.subjects.some(sub=>s.weakSubjects.includes(sub)));
+    const results = (townTutors || []).filter(t => t.town===s.town && t.subjects.some(sub=>s.weakSubjects.includes(sub)));
     setMatchResults(results);
   };
 
   const handleAssign = async (tutorId) => {
-    const s = townStudents.find(x => x.id === matchStudent);
+    const s = (townStudents || []).find(x => x.id === matchStudent);
     if (!s) return;
 
     // Check if tutor already has a student in the same time slot
-    const tutorStudents = townStudents.filter(st => st.tutor === tutorId);
+    const tutorStudents = (townStudents || []).filter(st => st.tutor === tutorId);
     const targetBuckets = (selectedSlots && selectedSlots.length > 0)
       ? getSlotBuckets(selectedSlots)
       : getSlotBuckets(s.slot || s.slots);
@@ -109,8 +121,8 @@ export const AdminDashboard = ({ user, page }) => {
 
   if (page==='dashboard') {
     if (selectedStudent) {
-      const currentStudent = townStudents.find(s => s.id === selectedStudent.id) || selectedStudent;
-      const t = townTutors.find(x => x.id === currentStudent.tutor);
+      const currentStudent = (townStudents || []).find(s => s.id === selectedStudent.id) || selectedStudent;
+      const t = (townTutors || []).find(x => x.id === currentStudent.tutor);
       return <StudentDetailView student={currentStudent} tutor={t} onBack={() => setSelectedStudent(null)} />;
     }
 
@@ -119,16 +131,16 @@ export const AdminDashboard = ({ user, page }) => {
       <div className="page-title">{admin?.town} Admin Dashboard</div>
       <div className="page-sub">Manage students and tutors in {admin?.town}.</div>
       <div className="stat-grid mb-24">
-        <div className="stat-card"><div className="stat-label">Total Students</div><div className="stat-value text-accent">{townStudents.length}</div></div>
-        <div className="stat-card"><div className="stat-label">Total Tutors</div><div className="stat-value" style={{color:'var(--success)'}}>{townTutors.length}</div></div>
+        <div className="stat-card"><div className="stat-label">Total Students</div><div className="stat-value text-accent">{(townStudents || []).length}</div></div>
+        <div className="stat-card"><div className="stat-label">Total Tutors</div><div className="stat-value" style={{color:'var(--success)'}}>{(townTutors || []).length}</div></div>
         <div className="stat-card"><div className="stat-label">Monthly Revenue</div><div className="stat-value" style={{color:'var(--gold)'}}>₹{admin?.revenue?.toLocaleString()}</div></div>
-        <div className="stat-card"><div className="stat-label">Unassigned</div><div className="stat-value" style={{color:'var(--warn)'}}>{townStudents.filter(s=>!s.tutor).length}</div></div>
+        <div className="stat-card"><div className="stat-label">Unassigned</div><div className="stat-value" style={{color:'var(--warn)'}}>{(townStudents || []).filter(s=>!s.tutor).length}</div></div>
       </div>
       <div className="card">
         <div style={{fontWeight:500,marginBottom:16}}>Recent Students</div>
         <div className="table-wrap"><table><thead><tr><th>Name</th><th>Grade</th><th>Subjects</th><th>Tutor</th><th>Fees</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody>{townStudents.slice(0,4).map(s=>{
-          const t = townTutors.find(x=>x.id===s.tutor);
+        <tbody>{(townStudents || []).slice(0,4).map(s=>{
+          const t = (townTutors || []).find(x=>x.id===s.tutor);
           return <tr key={s.id}><td><div className="flex gap-8"><div className={`avatar ${avatarColor(s.id)}`}>{initials(s.name)}</div><span style={{color:'var(--text)',fontWeight:500}}>{s.name}</span></div></td><td>{s.grade}</td><td><SubjectTags subjects={s.weakSubjects} /></td><td>{t?t.name:<span style={{color:'var(--warn)'}}>Unassigned</span>}</td><td><StatusBadge status={s.feesPaid?'paid':'unpaid'} /></td><td><StatusBadge status={s.status} /></td><td><button className="btn btn-sm" onClick={() => setSelectedStudent(s)}>View</button></td></tr>;
         })}</tbody></table></div>
       </div>
@@ -153,12 +165,12 @@ export const AdminDashboard = ({ user, page }) => {
 
   if (page==='students') {
     if (selectedStudent) {
-      const currentStudent = townStudents.find(s => s.id === selectedStudent.id) || selectedStudent;
-      const t = townTutors.find(x=>x.id===currentStudent.tutor);
+      const currentStudent = (townStudents || []).find(s => s.id === selectedStudent.id) || selectedStudent;
+      const t = (townTutors || []).find(x=>x.id===currentStudent.tutor);
       return <StudentDetailView student={currentStudent} tutor={t} onBack={()=>setSelectedStudent(null)} />;
     }
 
-    let filtered = townStudents;
+    let filtered = townStudents || [];
     if (filterAssigned === 'assigned') filtered = filtered.filter(s => s.tutor);
     else if (filterAssigned === 'unassigned') filtered = filtered.filter(s => !s.tutor);
 
@@ -175,7 +187,7 @@ export const AdminDashboard = ({ user, page }) => {
     return (
       <div>
         <div className="flex-between mb-24">
-          <div><div className="page-title">Students — {admin?.town}</div><div className="page-sub">{townStudents.length} registered students</div></div>
+          <div><div className="page-title">Students — {admin?.town}</div><div className="page-sub">{(townStudents || []).length} registered students</div></div>
           <div className="flex gap-12">
             <button className={`btn btn-sm ${filterAssigned==='all'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterAssigned('all')}>All</button>
             <button className={`btn btn-sm ${filterAssigned==='assigned'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterAssigned('assigned')}>Assigned</button>
@@ -194,7 +206,7 @@ export const AdminDashboard = ({ user, page }) => {
           </div>
           <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Gender</th><th>Grade</th><th>Slot</th><th>Tutor</th><th>Fees</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>{filtered.map(s=>{
-            const t=townTutors.find(x=>x.id===s.tutor);
+            const t=(townTutors || []).find(x=>x.id===s.tutor);
             return <tr key={s.id}><td style={{color:'var(--text3)'}}>{s.id}</td><td><div className="flex gap-8"><div className={`avatar ${avatarColor(s.id)}`}>{initials(s.name)}</div><div><div style={{fontWeight:500,color:'var(--text)'}}>{s.name}</div><div style={{fontSize:11,color:'var(--text3)'}}>{s.parent}</div></div></div></td><td>{s.gender || '—'}</td><td>{s.grade}</td><td><span className="badge">{s.slot || '—'}</span></td><td>{t?t.name:<span className="badge badge-warn">None</span>}</td><td><StatusBadge status={s.feesPaid?'paid':'unpaid'} /></td><td><StatusBadge status={s.status} /></td><td><button className="btn btn-sm" onClick={()=>setSelectedStudent(s)}>View</button></td></tr>;
           })}</tbody></table></div>
         </div>
@@ -204,14 +216,14 @@ export const AdminDashboard = ({ user, page }) => {
 
   if (page==='tutors') {
     if (selectedTutor) {
-      const currentTutor = townTutors.find(t => t.id === selectedTutor.id) || selectedTutor;
-      const assigned = townStudents.filter(s => s.tutor === currentTutor.id);
+      const currentTutor = (townTutors || []).find(t => t.id === selectedTutor.id) || selectedTutor;
+      const assigned = (townStudents || []).filter(s => s.tutor === currentTutor.id);
       return <TutorDetailView tutor={currentTutor} assignedStudents={assigned} onBack={()=>setSelectedTutor(null)} onRefresh={refreshData} />;
     }
 
-    let filtered = townTutors;
-    if (filterTutorAssigned === 'assigned') filtered = filtered.filter(t => t.students.length > 0);
-    else if (filterTutorAssigned === 'unassigned') filtered = filtered.filter(t => t.students.length === 0);
+    let filtered = townTutors || [];
+    if (filterTutorAssigned === 'assigned') filtered = filtered.filter(t => (t.students || []).length > 0);
+    else if (filterTutorAssigned === 'unassigned') filtered = filtered.filter(t => (t.students || []).length === 0);
 
     if (searchTutorQuery.trim()) {
       const q = searchTutorQuery.toLowerCase();
@@ -226,7 +238,7 @@ export const AdminDashboard = ({ user, page }) => {
     return (
       <div>
         <div className="flex-between mb-24">
-          <div><div className="page-title">Tutors — {admin?.town}</div><div className="page-sub">{townTutors.length} registered tutors</div></div>
+          <div><div className="page-title">Tutors — {admin?.town}</div><div className="page-sub">{(townTutors || []).length} registered tutors</div></div>
           <div className="flex gap-12">
             <button className={`btn btn-sm ${filterTutorAssigned==='all'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterTutorAssigned('all')}>All</button>
             <button className={`btn btn-sm ${filterTutorAssigned==='assigned'?'btn-primary':'btn-ghost'}`} onClick={()=>setFilterTutorAssigned('assigned')}>Assigned</button>
@@ -244,7 +256,7 @@ export const AdminDashboard = ({ user, page }) => {
           </div>
           <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Subjects</th><th>Grade Range</th><th>Students</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>{filtered.map(t=>(
-            <tr key={t.id}><td style={{color:'var(--text3)'}}>{t.id}</td><td><div className="flex gap-8"><div className={`avatar ${avatarColor(t.id)}`}>{initials(t.name)}</div><div><div style={{fontWeight:500,color:'var(--text)'}}>{t.name}</div><div style={{fontSize:11,color:'var(--text3)'}}>{t.qualification}</div></div></div></td><td><SubjectTags subjects={t.subjects} /></td><td>{t.grades}</td><td>{t.students.length}</td><td><StatusBadge status={t.status} /></td><td><button className="btn btn-sm" onClick={()=>setSelectedTutor(t)}>View</button></td></tr>
+            <tr key={t.id}><td style={{color:'var(--text3)'}}>{t.id}</td><td><div className="flex gap-8"><div className={`avatar ${avatarColor(t.id)}`}>{initials(t.name)}</div><div><div style={{fontWeight:500,color:'var(--text)'}}>{t.name}</div><div style={{fontSize:11,color:'var(--text3)'}}>{t.qualification}</div></div></div></td><td><SubjectTags subjects={t.subjects || []} /></td><td>{t.grades}</td><td>{(t.students || []).length}</td><td><StatusBadge status={t.status} /></td><td><button className="btn btn-sm" onClick={()=>setSelectedTutor(t)}>View</button></td></tr>
           ))}</tbody></table></div>
         </div>
       </div>
@@ -252,9 +264,15 @@ export const AdminDashboard = ({ user, page }) => {
   }
 
   if (page==='matching') {
+    if (selectedStudent) {
+      const currentStudent = (townStudents || []).find(s => s.id === selectedStudent.id) || selectedStudent;
+      const t = (townTutors || []).find(x => x.id === currentStudent.tutor);
+      return <StudentDetailView student={currentStudent} tutor={t} onBack={() => setSelectedStudent(null)} />;
+    }
+
     if (selectedTutor) {
-      const currentTutor = townTutors.find(t => t.id === selectedTutor.id) || selectedTutor;
-      const assigned = townStudents.filter(s => s.tutor === currentTutor.id);
+      const currentTutor = (townTutors || []).find(t => t.id === selectedTutor.id) || selectedTutor;
+      const assigned = (townStudents || []).filter(s => s.tutor === currentTutor.id);
       return <TutorDetailView tutor={currentTutor} assignedStudents={assigned} onBack={()=>setSelectedTutor(null)} onRefresh={refreshData} />;
     }
 
@@ -272,8 +290,21 @@ export const AdminDashboard = ({ user, page }) => {
           <div className="flex gap-12">
             <select className="form-input" style={{flex:1}} value={matchStudent} onChange={e=>setMatchStudent(e.target.value)}>
               <option value="">Select student...</option>
-              {townStudents.map(s=><option key={s.id} value={s.id}>{s.name} {s.tutor ? '(Assigned)' : ''} — {s.weakSubjects.join(', ')}</option>)}
+              {(townStudents || []).map(s=><option key={s.id} value={s.id}>{s.name} {s.tutor ? '(Assigned)' : ''} — {(s.weakSubjects || []).join(', ')}</option>)}
             </select>
+            {matchStudent && (
+              <button 
+                type="button" 
+                className="btn btn-ghost" 
+                style={{ border: '1px solid var(--border)' }}
+                onClick={() => {
+                  const s = (townStudents || []).find(x => x.id === matchStudent);
+                  if (s) setSelectedStudent(s);
+                }}
+              >
+                View Student
+              </button>
+            )}
             <button className="btn btn-primary" onClick={runMatch}>Find Matches</button>
           </div>
         </div>
@@ -343,8 +374,8 @@ export const AdminDashboard = ({ user, page }) => {
 
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20}}>
               {displayedTutors.map(t => {
-                const tutorStudents = townStudents.filter(st => st.tutor === t.id);
-                const targetStudent = townStudents.find(x => x.id === matchStudent);
+                const tutorStudents = (townStudents || []).filter(st => st.tutor === t.id);
+                const targetStudent = (townStudents || []).find(x => x.id === matchStudent);
 
                 let isAllotted = false;
                 if (targetStudent) {
@@ -442,14 +473,14 @@ export const AdminDashboard = ({ user, page }) => {
   }
 
   if (page==='fees') {
-    const assignedStudents = townStudents.filter(s => s.tutor);
+    const assignedStudents = (townStudents || []).filter(s => s.tutor);
     const unpaidPairs = assignedStudents.filter(s => !s.feesPaid).length;
 
     // Calculate Target Amount (10% of fees for all assigned students)
     const targetAmount = assignedStudents.reduce((acc, s) => acc + (s.fees * 0.10), 0);
 
     // Calculate total loyalty paid this month
-    const totalLoyaltyPaid = townTutors.reduce((acc, t) => {
+    const totalLoyaltyPaid = (townTutors || []).reduce((acc, t) => {
       const monthLoyalty = (t.loyalty || []).filter(p => {
         const d = new Date(p.date);
         return (d.getMonth() + 1) === feeMonth && d.getFullYear() === feeYear;
@@ -509,7 +540,7 @@ export const AdminDashboard = ({ user, page }) => {
               </thead>
               <tbody>
                 {assignedStudents.map(s => {
-                  const t = townTutors.find(x => x.id === s.tutor);
+                  const t = (townTutors || []).find(x => x.id === s.tutor);
                   return (
                     <tr key={s.id}>
                       <td style={{fontWeight:500, color:'var(--text)'}}>{s.name}</td>
