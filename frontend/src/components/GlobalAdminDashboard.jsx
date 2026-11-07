@@ -31,6 +31,11 @@ export const GlobalAdminDashboard = ({ page }) => {
     refreshData();
   }, []);
 
+  useEffect(() => {
+    setSelectedStudent(null);
+    setSelectedTutor(null);
+  }, [page]);
+
   const totalStudents = allStudents.length;
   const totalTutors = allTutors.length;
   const totalRevenue = allStudents.filter(s=>s.feesPaid).reduce((a,s)=>a+s.fees,0);

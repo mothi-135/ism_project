@@ -166,7 +166,7 @@ export const StudentDetailView = ({ student, tutor, onBack }) => {
     <div>
       <div className="flex-between mb-24">
         <div>
-          <button className="btn btn-ghost btn-sm mb-8" onClick={onBack}>← Back to Students</button>
+          <button className="btn btn-ghost btn-sm mb-8" onClick={onBack}>← Back</button>
           <div className="page-title">{student.name}</div>
           <div className="page-sub">Student ID: {student.id} | <StatusBadge status={student.status} /></div>
         </div>
@@ -174,38 +174,55 @@ export const StudentDetailView = ({ student, tutor, onBack }) => {
       </div>
 
       <div className="grid-2">
-        <div className="card">
-          <div className="form-section-title">Personal Details</div>
-          <div className="info-row"><span className="info-key">Gender</span><span className="info-val">{student.gender || '—'}</span></div>
-          <div className="info-row"><span className="info-key">Date Joined</span><span className="info-val">{student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : '—'}</span></div>
-          <div className="info-row"><span className="info-key">Email</span><span className="info-val">{student.email || '—'}</span></div>
-          <div className="info-row"><span className="info-key">Parent Name</span><span className="info-val">{student.parent || '—'}</span></div>
-          <div className="info-row"><span className="info-key">Phone</span><span className="info-val">{student.phone || '—'}</span></div>
-          <div className="info-row"><span className="info-key">Town</span><span className="info-val">{student.town}</span></div>
-          <div className="info-row"><span className="info-key">Pincode</span><span className="info-val">{student.pincode || '—'}</span></div>
-          <div className="info-row"><span className="info-key">Address</span><span className="info-val">{student.address || '—'}</span></div>
+        <div>
+          <div className="card mb-24">
+            <div className="form-section-title">Personal & Demographic Details</div>
+            <div className="info-row"><span className="info-key">Full Name</span><span className="info-val">{student.name || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Gender</span><span className="info-val">{student.gender || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Aadhaar Number</span><span className="info-val">{student.aadhaar || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Caste</span><span className="info-val">{student.caste || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Religion</span><span className="info-val">{student.religion || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Date Joined</span><span className="info-val">{student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : '—'}</span></div>
+            <div className="info-row"><span className="info-key">Email</span><span className="info-val">{student.email || '—'}</span></div>
+          </div>
+
+          <div className="card mb-24">
+            <div className="form-section-title">Parent & Contact Information</div>
+            <div className="info-row"><span className="info-key">Father Name</span><span className="info-val">{student.fatherName || student.parent || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Father Mobile</span><span className="info-val">{student.fatherPhone || student.phone || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Father Occupation</span><span className="info-val">{student.fatherOccupation || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Mother Name</span><span className="info-val">{student.motherName || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Mother Mobile</span><span className="info-val">{student.motherPhone || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Mother Occupation</span><span className="info-val">{student.motherOccupation || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Town</span><span className="info-val">{student.town}</span></div>
+            <div className="info-row"><span className="info-key">Pincode</span><span className="info-val">{student.pincode || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Landmark</span><span className="info-val">{student.landmark || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Full Address</span><span className="info-val">{student.address || '—'}</span></div>
+          </div>
         </div>
 
         <div>
           <div className="card mb-24">
-            <div className="form-section-title">Academic Details</div>
-            <div className="info-row"><span className="info-key">Grade</span><span className="info-val">{student.grade}</span></div>
+            <div className="form-section-title">Academic Details & Preferences</div>
+            <div className="info-row"><span className="info-key">Grade / Class</span><span className="info-val">{student.grade || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Academic Year</span><span className="info-val">{student.academicYear || '—'}</span></div>
             <div className="info-row"><span className="info-key">Board</span><span className="info-val">{student.board || '—'}</span></div>
-            <div className="info-row"><span className="info-key">School</span><span className="info-val">{student.school || '—'}</span></div>
-            <div className="info-row" style={{ alignItems: 'center' }}><span className="info-key">Weak Subjects</span><span className="info-val"><SubjectTags subjects={student.weakSubjects || []} /></span></div>
-            <div className="info-row"><span className="info-key">Preferred Slot</span><span className="info-val">{student.slot || '—'}</span></div>
-            <div className="info-row"><span className="info-key">Preferred Tutor Gender</span><span className="info-val">{student.preferredGender || '—'}</span></div>
-            <div className="info-row"><span className="info-key">Additional Requirements</span><span className="info-val">{student.additionalRequirements || '—'}</span></div>
+            <div className="info-row"><span className="info-key">School Name</span><span className="info-val">{student.school || '—'}</span></div>
+            <div className="info-row"><span className="info-key">School City</span><span className="info-val">{student.schoolCity || '—'}</span></div>
+            <div className="info-row" style={{ alignItems: 'center' }}><span className="info-key">Weak Subjects</span><span className="info-val">{student.weakSubjects && student.weakSubjects.length > 0 ? <SubjectTags subjects={student.weakSubjects} /> : 'None'}</span></div>
+            <div className="info-row"><span className="info-key">Preferred Slots</span><span className="info-val">{student.slot || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Preferred Tutor Gender</span><span className="info-val">{student.preferredGender || 'No Preference'}</span></div>
+            <div className="info-row"><span className="info-key">Additional Notes</span><span className="info-val">{student.additionalRequirements || '—'}</span></div>
           </div>
 
           <div className="card">
-            <div className="form-section-title">Tutor & Fees</div>
+            <div className="form-section-title">Tutor & Fee Information</div>
             {tutor ? (
               <div className="info-row"><span className="info-key">Assigned Tutor</span><span className="info-val">{tutor.name} ({tutor.id})</span></div>
             ) : (
               <div className="info-row"><span className="info-key">Assigned Tutor</span><span className="info-val" style={{ color: 'var(--warn)' }}>Unassigned</span></div>
             )}
-            <div className="info-row"><span className="info-key">Fees</span><span className="info-val">₹{student.fees}</span></div>
+            <div className="info-row"><span className="info-key">Monthly Fees</span><span className="info-val">₹{student.fees || 2000}</span></div>
             <div className="info-row"><span className="info-key">Payment Status</span><span className="info-val"><StatusBadge status={student.feesPaid ? 'paid' : 'unpaid'} /></span></div>
           </div>
         </div>
@@ -215,13 +232,13 @@ export const StudentDetailView = ({ student, tutor, onBack }) => {
 };
 
 export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) => {
-  const [loyaltyPayments, setLoyaltyPayments] = useState(tutor.loyalty || []);
+  const [loyaltyPayments, setLoyaltyPayments] = useState(tutor?.loyalty || []);
   const [showAddLoyalty, setShowAddLoyalty] = useState(false);
   const [loyaltyForm, setLoyaltyForm] = useState({ studentId: '', date: '', amount: '', notes: '' });
 
   useEffect(() => {
-    setLoyaltyPayments(tutor.loyalty || []);
-  }, [tutor.loyalty]);
+    setLoyaltyPayments(tutor?.loyalty || []);
+  }, [tutor?.loyalty]);
 
   const handleAddLoyalty = () => {
     if (!loyaltyForm.studentId || !loyaltyForm.date || !loyaltyForm.amount) {
@@ -269,7 +286,7 @@ export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) 
     <div>
       <div className="flex-between mb-24">
         <div>
-          <button className="btn btn-ghost btn-sm mb-8" onClick={onBack}>← Back to Tutors</button>
+          <button className="btn btn-ghost btn-sm mb-8" onClick={onBack}>← Back</button>
           <div className="page-title">{tutor.name}</div>
           <div className="page-sub">Tutor ID: {tutor.id} | <StatusBadge status={tutor.status} /></div>
         </div>
@@ -280,22 +297,36 @@ export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) 
         <div>
           <div className="card mb-24">
             <div className="form-section-title">Personal Details</div>
+            <div className="info-row"><span className="info-key">Full Name</span><span className="info-val">{tutor.name || '—'}</span></div>
             <div className="info-row"><span className="info-key">Gender</span><span className="info-val">{tutor.gender || '—'}</span></div>
-            <div className="info-row"><span className="info-key">Phone</span><span className="info-val">{tutor.phone}</span></div>
-            <div className="info-row"><span className="info-key">WhatsApp</span><span className="info-val">{tutor.whatsapp || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Mobile Number</span><span className="info-val">{tutor.phone || '—'}</span></div>
             <div className="info-row"><span className="info-key">Email</span><span className="info-val">{tutor.email || '—'}</span></div>
-            <div className="info-row"><span className="info-key">DOB</span><span className="info-val">{tutor.dob ? new Date(tutor.dob).toLocaleDateString() : '—'}</span></div>
-            <div className="info-row"><span className="info-key">Aadhaar</span><span className="info-val">{tutor.aadhaar || '—'}</span></div>
-            <div className="info-row"><span className="info-key">Town</span><span className="info-val">{tutor.town}</span></div>
-            <div className="info-row"><span className="info-key">Address</span><span className="info-val">{tutor.address || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Aadhaar Number</span><span className="info-val">{tutor.aadhaar || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Caste</span><span className="info-val">{tutor.caste || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Religion</span><span className="info-val">{tutor.religion || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Primary Town</span><span className="info-val">{tutor.town || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Available Pincodes</span><span className="info-val">{(tutor.pincodes || []).join(', ') || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Landmark</span><span className="info-val">{tutor.landmark || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Home Address</span><span className="info-val">{tutor.address || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Date Joined</span><span className="info-val">{tutor.joiningDate ? new Date(tutor.joiningDate).toLocaleDateString() : '—'}</span></div>
+          </div>
+
+          <div className="card mb-24">
+            <div className="form-section-title">Qualifications & Experience</div>
+            <div className="info-row"><span className="info-key">Highest Qualification</span><span className="info-val">{tutor.qualification || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Experience</span><span className="info-val">{tutor.experience || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Current Occupation</span><span className="info-val">{tutor.occupation || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Grades Taught</span><span className="info-val">{tutor.grades || '—'}</span></div>
+            <div className="info-row" style={{ alignItems: 'center' }}><span className="info-key">Subjects</span><span className="info-val">{tutor.subjects && tutor.subjects.length > 0 ? <SubjectTags subjects={tutor.subjects} /> : 'None'}</span></div>
+            <div className="info-row"><span className="info-key">Rating</span><span className="info-val">★ {tutor.rating || '4.8'}</span></div>
           </div>
 
           <div className="card mb-24">
             <div className="flex-between mb-16"><div className="form-section-title mb-0">Assigned Students</div></div>
-            {assignedStudents.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>No students assigned.</div> : (
-              <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Grade</th></tr></thead>
+            {(!assignedStudents || assignedStudents.length === 0) ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>No students assigned.</div> : (
+              <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Grade</th><th>Town</th><th>Fees</th></tr></thead>
                 <tbody>{assignedStudents.map(s => (
-                  <tr key={s.id}><td>{s.id}</td><td>{s.name}</td><td>{s.grade}</td></tr>
+                  <tr key={s.id}><td>{s.id}</td><td>{s.name}</td><td>{s.grade}</td><td>{s.town}</td><td>₹{s.fees || 2000}</td></tr>
                 ))}</tbody></table></div>
             )}
           </div>
@@ -303,12 +334,43 @@ export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) 
 
         <div>
           <div className="card mb-24">
-            <div className="form-section-title">Qualifications & Experience</div>
-            <div className="info-row"><span className="info-key">Qualification</span><span className="info-val">{tutor.qualification || '—'}</span></div>
-            <div className="info-row"><span className="info-key">Experience</span><span className="info-val">{tutor.experience || '—'}</span></div>
-            <div className="info-row"><span className="info-key">Grades Taught</span><span className="info-val">{tutor.grades || '—'}</span></div>
-            <div className="info-row" style={{ alignItems: 'center' }}><span className="info-key">Subjects</span><span className="info-val"><SubjectTags subjects={tutor.subjects || []} /></span></div>
-            <div className="info-row"><span className="info-key">Pincodes</span><span className="info-val">{(tutor.pincodes || []).join(', ') || '—'}</span></div>
+            <div className="form-section-title">Education Details</div>
+            <div className="info-row"><span className="info-key">10th School Name</span><span className="info-val">{tutor.tenth_school_name || '—'}</span></div>
+            <div className="info-row"><span className="info-key">10th CGPA / %</span><span className="info-val">{tutor.tenth_cgpa || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Inter College Name</span><span className="info-val">{tutor.inter_college_name || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Inter Stream</span><span className="info-val">{tutor.inter_stream || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Inter CGPA</span><span className="info-val">{tutor.inter_cgpa || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Degree Name</span><span className="info-val">{tutor.degree_name || tutor.qualification || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Degree College Name</span><span className="info-val">{tutor.degree_college_name || '—'}</span></div>
+            <div className="info-row"><span className="info-key">Degree CGPA</span><span className="info-val">{tutor.degree_cgpa || '—'}</span></div>
+          </div>
+
+          <div className="card mb-24">
+            <div className="form-section-title">Weekly Availability Schedule</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                const daySlots = tutor.availability?.[day] || [];
+                const dayFullNames = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+                return (
+                  <div key={day} style={{ background: 'var(--bg3)', padding: '10px 12px', borderRadius: 8, border: daySlots.length > 0 ? '1px solid var(--accent)' : '1px solid var(--border)' }}>
+                    <div style={{ fontWeight: 600, fontSize: 12, color: daySlots.length > 0 ? 'var(--accent2)' : 'var(--text3)', marginBottom: 6 }}>
+                      {dayFullNames[day]}
+                    </div>
+                    {daySlots.length === 0 ? (
+                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>Unavailable</span>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {daySlots.map(s => (
+                          <span key={s} style={{ fontSize: 10.5, background: 'var(--surface)', padding: '2px 6px', borderRadius: 4, color: 'var(--text2)' }}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="card">
@@ -327,7 +389,7 @@ export const TutorDetailView = ({ tutor, assignedStudents, onBack, onRefresh }) 
                     onChange={e => setLoyaltyForm({ ...loyaltyForm, studentId: e.target.value })}
                   >
                     <option value="">Select student...</option>
-                    {assignedStudents.map(s => (
+                    {(assignedStudents || []).map(s => (
                       <option key={s.id} value={s.id}>{s.name} ({s.id})</option>
                     ))}
                   </select>

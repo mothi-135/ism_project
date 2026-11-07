@@ -54,6 +54,11 @@ export const AdminDashboard = ({ user, page }) => {
     refreshData();
   }, [admin?.town, feeMonth, feeYear]);
 
+  useEffect(() => {
+    setSelectedStudent(null);
+    setSelectedTutor(null);
+  }, [page]);
+
   const runMatch = () => {
     const s = townStudents.find(x=>x.id===matchStudent);
     if (!s) return;
@@ -102,7 +107,14 @@ export const AdminDashboard = ({ user, page }) => {
     }
   };
 
-  if (page==='dashboard') return (
+  if (page==='dashboard') {
+    if (selectedStudent) {
+      const currentStudent = townStudents.find(s => s.id === selectedStudent.id) || selectedStudent;
+      const t = townTutors.find(x => x.id === currentStudent.tutor);
+      return <StudentDetailView student={currentStudent} tutor={t} onBack={() => setSelectedStudent(null)} />;
+    }
+
+    return (
     <div>
       <div className="page-title">{admin?.town} Admin Dashboard</div>
       <div className="page-sub">Manage students and tutors in {admin?.town}.</div>
@@ -114,10 +126,10 @@ export const AdminDashboard = ({ user, page }) => {
       </div>
       <div className="card">
         <div style={{fontWeight:500,marginBottom:16}}>Recent Students</div>
-        <div className="table-wrap"><table><thead><tr><th>Name</th><th>Grade</th><th>Subjects</th><th>Tutor</th><th>Fees</th><th>Status</th></tr></thead>
+        <div className="table-wrap"><table><thead><tr><th>Name</th><th>Grade</th><th>Subjects</th><th>Tutor</th><th>Fees</th><th>Status</th><th>Action</th></tr></thead>
         <tbody>{townStudents.slice(0,4).map(s=>{
           const t = townTutors.find(x=>x.id===s.tutor);
-          return <tr key={s.id}><td><div className="flex gap-8"><div className={`avatar ${avatarColor(s.id)}`}>{initials(s.name)}</div><span style={{color:'var(--text)',fontWeight:500}}>{s.name}</span></div></td><td>{s.grade}</td><td><SubjectTags subjects={s.weakSubjects} /></td><td>{t?t.name:<span style={{color:'var(--warn)'}}>Unassigned</span>}</td><td><StatusBadge status={s.feesPaid?'paid':'unpaid'} /></td><td><StatusBadge status={s.status} /></td></tr>;
+          return <tr key={s.id}><td><div className="flex gap-8"><div className={`avatar ${avatarColor(s.id)}`}>{initials(s.name)}</div><span style={{color:'var(--text)',fontWeight:500}}>{s.name}</span></div></td><td>{s.grade}</td><td><SubjectTags subjects={s.weakSubjects} /></td><td>{t?t.name:<span style={{color:'var(--warn)'}}>Unassigned</span>}</td><td><StatusBadge status={s.feesPaid?'paid':'unpaid'} /></td><td><StatusBadge status={s.status} /></td><td><button className="btn btn-sm" onClick={() => setSelectedStudent(s)}>View</button></td></tr>;
         })}</tbody></table></div>
       </div>
       
@@ -136,7 +148,8 @@ export const AdminDashboard = ({ user, page }) => {
         </div>
       )}
     </div>
-  );
+    );
+  }
 
   if (page==='students') {
     if (selectedStudent) {
@@ -239,6 +252,12 @@ export const AdminDashboard = ({ user, page }) => {
   }
 
   if (page==='matching') {
+    if (selectedTutor) {
+      const currentTutor = townTutors.find(t => t.id === selectedTutor.id) || selectedTutor;
+      const assigned = townStudents.filter(s => s.tutor === currentTutor.id);
+      return <TutorDetailView tutor={currentTutor} assignedStudents={assigned} onBack={()=>setSelectedTutor(null)} onRefresh={refreshData} />;
+    }
+
     const morningSlots = ["05:30 AM", "06:00 AM", "06:30 AM", "07:00 AM", "07:30 AM", "08:00 AM"];
     const eveningSlots = ["04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM", "09:00 PM"];
     const currentSlots = selectedSession === 'Morning' ? morningSlots : eveningSlots;
