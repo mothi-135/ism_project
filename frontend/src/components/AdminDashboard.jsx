@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { initials, avatarColor, StatusBadge, SubjectTags, StudentDetailView, TutorDetailView, API_URL } from './Shared';
+import { initials, avatarColor, StatusBadge, SubjectTags, StudentDetailView, TutorDetailView, API_URL, getSlotBuckets, hasSlotConflict } from './Shared';
 
 export const AdminDashboard = ({ user, page }) => {
   const [admin, setAdmin] = useState(null);
@@ -62,19 +62,40 @@ export const AdminDashboard = ({ user, page }) => {
   };
 
   const handleAssign = async (tutorId) => {
+    const s = townStudents.find(x => x.id === matchStudent);
+    if (!s) return;
+
+    // Check if tutor already has a student in the same time slot
+    const tutorStudents = townStudents.filter(st => st.tutor === tutorId);
+    const targetBuckets = (selectedSlots && selectedSlots.length > 0)
+      ? getSlotBuckets(selectedSlots)
+      : getSlotBuckets(s.slot || s.slots);
+
+    const isConflicted = tutorStudents.some(st => {
+      if (st.id === s.id) return false;
+      const stBuckets = getSlotBuckets(st.slot || st.slots);
+      return hasSlotConflict(targetBuckets, stBuckets);
+    });
+
+    if (isConflicted) {
+      alert('assigning is not possible as tutor is already assigned to a student in that time slot');
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/admins/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: matchStudent, tutorId })
+        body: JSON.stringify({ studentId: matchStudent, tutorId, selectedSlots })
       });
+      const data = await res.json();
       if (res.ok) {
         refreshData();
         setMatchStudent('');
         setMatchResults([]);
         alert('Tutor assigned successfully!');
       } else {
-        alert('Failed to assign tutor.');
+        alert(data.message || 'assigning is not possible as tutor is already assigned to a student in that time slot');
       }
     } catch (err) {
       alert('Error assigning tutor.');
@@ -304,22 +325,21 @@ export const AdminDashboard = ({ user, page }) => {
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20}}>
               {displayedTutors.map(t => {
                 const tutorStudents = townStudents.filter(st => st.tutor === t.id);
+                const targetStudent = townStudents.find(x => x.id === matchStudent);
+
                 let isAllotted = false;
-                if (selectedSlots.length > 0) {
-                  isAllotted = tutorStudents.some(st => {
-                    const sSlot = (st.slot || '').toLowerCase();
-                    return selectedSlots.some(sel => {
-                      const hr = parseInt(sel.split(':')[0], 10);
-                      const isPM = sel.includes('PM');
-                      if (isPM && sSlot.includes('pm')) {
-                        if (hr >= 4 && hr <= 7 && sSlot.includes('5:30 pm')) return true;
-                        if (hr >= 7 && hr <= 9 && sSlot.includes('7:30 pm')) return true;
-                      } else if (!isPM && sSlot.includes('am')) {
-                        if (hr >= 5 && hr <= 8 && sSlot.includes('5:30 am')) return true;
-                      }
-                      return false;
+                if (targetStudent) {
+                  const targetBuckets = (selectedSlots && selectedSlots.length > 0)
+                    ? getSlotBuckets(selectedSlots)
+                    : getSlotBuckets(targetStudent.slot || targetStudent.slots);
+
+                  if (targetBuckets.size > 0) {
+                    isAllotted = tutorStudents.some(st => {
+                      if (st.id === targetStudent.id) return false;
+                      const stBuckets = getSlotBuckets(st.slot || st.slots);
+                      return hasSlotConflict(targetBuckets, stBuckets);
                     });
-                  });
+                  }
                 }
 
                 return (
@@ -351,17 +371,10 @@ export const AdminDashboard = ({ user, page }) => {
                   <div className="flex gap-8 flex-wrap mb-24">
                     {Array.from(new Set(Object.values(t.availability || {}).flat())).map(slot => {
                       // Check if this slot is allotted
+                      const slotBuckets = getSlotBuckets(slot);
                       const isSlotAllotted = tutorStudents.some(st => {
-                        const sSlot = (st.slot || '').toLowerCase();
-                        const hr = parseInt(slot.split(':')[0], 10);
-                        const isPM = slot.includes('PM');
-                        if (isPM && sSlot.includes('pm')) {
-                          if (hr >= 4 && hr <= 7 && sSlot.includes('5:30 pm')) return true;
-                          if (hr >= 7 && hr <= 9 && sSlot.includes('7:30 pm')) return true;
-                        } else if (!isPM && sSlot.includes('am')) {
-                          if (hr >= 5 && hr <= 8 && sSlot.includes('5:30 am')) return true;
-                        }
-                        return false;
+                        const stBuckets = getSlotBuckets(st.slot || st.slots);
+                        return hasSlotConflict(slotBuckets, stBuckets);
                       });
 
                       return (
@@ -375,8 +388,18 @@ export const AdminDashboard = ({ user, page }) => {
 
                   <div className="flex gap-12 mt-auto">
                     <button className="btn btn-ghost" style={{flex: 1, border: '1px solid var(--border)', color: 'var(--accent)'}} onClick={() => setSelectedTutor(t)}>View Profile</button>
-                    <button className="btn btn-primary" style={{flex: 1}} disabled={isAllotted} onClick={() => handleAssign(t.id)}>
-                      {isAllotted ? 'Unavailable' : 'Assign Tutor'}
+                    <button 
+                      className="btn btn-primary" 
+                      style={{flex: 1, ...(isAllotted ? { opacity: 0.75, background: 'var(--danger2)', borderColor: 'var(--danger)', color: 'var(--danger)', cursor: 'not-allowed' } : {})}} 
+                      onClick={() => {
+                        if (isAllotted) {
+                          alert('assigning is not possible as tutor is already assigned to a student in that time slot');
+                          return;
+                        }
+                        handleAssign(t.id);
+                      }}
+                    >
+                      {isAllotted ? 'Slot Occupied' : 'Assign Tutor'}
                     </button>
                   </div>
                 </div>

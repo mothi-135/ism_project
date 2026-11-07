@@ -63,7 +63,6 @@ export const StudentForm = ({ onDone }) => {
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Academic Year</label><select className="form-input" value={data.academicYear} onChange={e => up('academicYear', e.target.value)}><option value="">Select</option><option>2023-2024</option><option>2024-2025</option><option>2025-2026</option><option>2026-2027</option></select></div>
-              <div className="form-group"></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Board</label><select className="form-input" value={data.board} onChange={e => up('board', e.target.value)}><option value="">Select</option><option>CBSE</option><option>AP State</option><option>ICSE</option></select></div>
@@ -71,7 +70,6 @@ export const StudentForm = ({ onDone }) => {
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Religion</label><select className="form-input" value={data.religion} onChange={e => up('religion', e.target.value)}><option value="">Select Religion</option><option>HINDU</option><option>MUSLIM</option><option>CHRISTIAN</option><option>SIKH</option><option>OTHER</option></select></div>
-              <div className="form-group"></div>
             </div>
             <div className="form-group">
               <label className="form-label">Weak Subjects</label>
@@ -96,7 +94,6 @@ export const StudentForm = ({ onDone }) => {
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Father Occupation</label><input className="form-input" placeholder="e.g. Business, Teacher" value={data.fatherOccupation} onChange={e => up('fatherOccupation', e.target.value)} /></div>
-              <div className="form-group"></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Mother Name</label><input className="form-input" placeholder="Mother's full name" value={data.motherName} onChange={e => up('motherName', e.target.value)} /></div>
@@ -104,7 +101,6 @@ export const StudentForm = ({ onDone }) => {
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Mother Occupation</label><input className="form-input" placeholder="generation shaper" value={data.motherOccupation} onChange={e => up('motherOccupation', e.target.value)} /></div>
-              <div className="form-group"></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Town</label><select className="form-input" value={data.town} onChange={e => up('town', e.target.value)}><option value="">Select Town</option><option>Naidupet</option><option>Sullurupet</option><option>Nellore</option><option>Tirupathi</option></select></div>
@@ -397,7 +393,6 @@ export const TutorForm = ({ onDone }) => {
             </div>
             <div className="form-row">
               <div className="form-group"><label className="form-label">Current Occupation</label><input className="form-input" placeholder="e.g. Teacher, Engineer" value={data.occupation} onChange={e => up('occupation', e.target.value)} /></div>
-              <div className="form-group"></div>
             </div>
 
             <div className="form-section-title mt-16" style={{ fontSize: 14 }}>Education Details</div>
@@ -415,13 +410,15 @@ export const TutorForm = ({ onDone }) => {
             <div className="form-row">
               <div className="form-group"><label className="form-label">Degree Name</label><input className="form-input" placeholder="e.g. B.Tech" value={data.degree_name} onChange={e => up('degree_name', e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Degree College Name</label><input className="form-input" placeholder="College Name" value={data.degree_college_name} onChange={e => up('degree_college_name', e.target.value)} /></div>
+            </div>
+            <div className="form-row">
               <div className="form-group"><label className="form-label">Degree CGPA</label><input className="form-input" placeholder="e.g. 8.5" value={data.degree_cgpa} onChange={e => up('degree_cgpa', e.target.value)} /></div>
             </div>
           </div>
         </>}
 
         {step === 3 && <>
-          <div className="flex-between">
+          <div className="flex-between" style={{ flexWrap: 'wrap', gap: 10 }}>
             <div className="form-section-title" style={{ margin: 0, border: 'none' }}>Set Your Weekly Availability</div>
             <div style={{ fontSize: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
               <button type="button" className="btn btn-ghost btn-sm" style={{ color: 'var(--accent2)', fontWeight: 500, padding: 0 }} onClick={selectAllGlobal}>Select All Slots</button>

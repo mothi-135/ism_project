@@ -70,6 +70,8 @@ function mapDbRowToStudent(row) {
     pincode: String(row.pincode || ''),
     preferredGender: row.preferredGender || 'No Preference',
     slot: slotStr,
+    slots: slotsArray,
+    slot_ids: row.slot_ids || [],
     joiningDate: row.joiningDate || new Date().toISOString(),
     email: row.email || 'student@ism.com',
     grade: gradeStr,

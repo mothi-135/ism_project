@@ -6,6 +6,76 @@ export const API_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export const initials = (name) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
+export const getSlotBuckets = (slotInput) => {
+  const buckets = new Set();
+  if (!slotInput) return buckets;
+
+  const items = Array.isArray(slotInput) ? slotInput : [slotInput];
+  for (const item of items) {
+    if (typeof item !== 'string' && typeof item !== 'number') continue;
+    const str = String(item).toLowerCase().trim();
+    if (!str || str === 'unassigned') continue;
+
+    // Check full slot string names first
+    if (str.includes('5:30 am - 7:30 am')) {
+      buckets.add('morning');
+    }
+    if (str.includes('5:30 pm - 7:30 pm')) {
+      buckets.add('evening_early');
+    }
+    if (str.includes('7:30 pm - 9:00 pm')) {
+      buckets.add('evening_late');
+    }
+
+    // Check individual time chips (e.g. '05:30 AM', '06:00 PM', '07:30 PM')
+    const timeMatch = str.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+    if (timeMatch && !str.includes('-')) {
+      let hr = parseInt(timeMatch[1], 10);
+      const isPM = timeMatch[3].toLowerCase() === 'pm';
+      if (isPM && hr < 12) hr += 12;
+      if (!isPM && hr === 12) hr = 0;
+      const minFromMidnight = hr * 60 + parseInt(timeMatch[2], 10);
+
+      // Morning: 5:00 AM to 8:30 AM
+      if (minFromMidnight >= 300 && minFromMidnight < 510) {
+        buckets.add('morning');
+      }
+      // Early evening: 4:00 PM to 7:29 PM
+      else if (minFromMidnight >= 960 && minFromMidnight < 1170) {
+        buckets.add('evening_early');
+      }
+      // Late evening: 7:30 PM to 10:00 PM
+      else if (minFromMidnight >= 1170 && minFromMidnight <= 1320) {
+        buckets.add('evening_late');
+      }
+    }
+
+    // Check slot ID numbers
+    if (typeof item === 'number' || /^\d+$/.test(str)) {
+      const num = parseInt(str, 10);
+      if ([1, 2, 10, 11, 12, 13].includes(num)) buckets.add('morning');
+      if ([3, 4, 5, 6, 7, 14, 15].includes(num)) buckets.add('evening_early');
+      if ([8, 9, 16, 17].includes(num)) buckets.add('evening_late');
+    }
+  }
+
+  if (buckets.size === 0 && items.length > 0) {
+    items.forEach(it => {
+      const s = String(it).trim().toLowerCase();
+      if (s && s !== 'unassigned') buckets.add(s);
+    });
+  }
+
+  return buckets;
+};
+
+export const hasSlotConflict = (bucketsA, bucketsB) => {
+  for (const b of bucketsA) {
+    if (bucketsB.has(b)) return true;
+  }
+  return false;
+};
+
 export const avatarColor = (id) => {
   const colors = ['avatar-purple', 'avatar-gold', 'avatar-success', 'avatar-info'];
 
