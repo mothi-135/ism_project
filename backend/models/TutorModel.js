@@ -149,170 +149,101 @@ function mapDbRowToTutor(row) {
 }
 
 const TutorModel = {
-  findAll: async () => {
-    const query = `
-      SELECT 
-        u.user_id as id,
-        tpi.t_name as name,
-        tpi.t_gender as gender,
-        tpi.t_adhaar_num as aadhaar,
-        tpi.t_phone as phone,
-        u.email,
-        u.created_at as "joiningDate",
-        tli.full_address as address,
-        tli.landmark as landmark,
-        tei.deg_name as qualification,
-        tei.deg_name as degree_name,
-        tei.experience as experience,
-        tei.tenth_school_name as tenth_school_name,
-        tei.tenth_cgpa as tenth_cgpa,
-        tei.inter_stream as inter_stream,
-        tei.inter_clg_name as inter_college_name,
-        tei.inter_cgpa as inter_cgpa,
-        tei.deg_clg_name as degree_college_name,
-        tei.deg_cpga as degree_cgpa,
-        tei.occupation as occupation,
-        l.location_name as town,
-        tpre.tel, tpre.hindi, tpre.eng, tpre.math, tpre.phy, tpre.bio, tpre.chem, tpre.social,
-        p1.pincode as pincode1, p2.pincode as pincode2, p3.pincode as pincode3,
-        tpre.start_grade, tpre.end_grade,
-        tpi.t_caste as caste,
-        tpi.t_religion as religion
-      FROM users u
-      LEFT JOIN tutor_personal_info tpi ON u.user_id = tpi.t_id
-      LEFT JOIN tutor_education_info tei ON u.user_id = tei.t_id
-      LEFT JOIN tutor_location_info tli ON u.user_id = tli.t_id
-      LEFT JOIN locations l ON tli.town = l.location_id
-      LEFT JOIN tutor_preference_info tpre ON u.user_id = tpre.t_id
-      LEFT JOIN pincodes p1 ON tpre.pincode1::VARCHAR = p1.code_id::VARCHAR
-      LEFT JOIN pincodes p2 ON tpre.pincode2::VARCHAR = p2.code_id::VARCHAR
-      LEFT JOIN pincodes p3 ON tpre.pincode3::VARCHAR = p3.code_id::VARCHAR
-      WHERE u.role_id = 4
-      ORDER BY u.user_id DESC
-    `;
-    const result = await db.query(query);
-    const tutors = result.rows;
+  
+findAll: async () => {
+  const query = `
+    SELECT 
+      tpi.t_id as id,
+      tpi.t_name as name,
+      tpi.t_gender as gender,
+      tpi.t_adhaar_num as aadhaar,
+      tpi.t_phone as phone,
+      NULL as email,
+      NULL as "joiningDate",
+      tli.full_address as address,
+      tli.landmark as landmark,
+      tei.deg_name as qualification,
+      tei.deg_name as degree_name,
+      tei.experience as experience,
+      tei.tenth_school_name as tenth_school_name,
+      tei.tenth_cgpa as tenth_cgpa,
+      tei.inter_stream as inter_stream,
+      tei.inter_clg_name as inter_college_name,
+      tei.inter_cgpa as inter_cgpa,
+      tei.deg_clg_name as degree_college_name,
+      tei.deg_cpga as degree_cgpa,
+      tei.occupation as occupation,
+      l.location_name as town,
+      tpre.tel, tpre.hindi, tpre.eng, tpre.math,
+      tpre.phy, tpre.bio, tpre.chem, tpre.social,
+      p1.pincode as pincode1,
+      p2.pincode as pincode2,
+      p3.pincode as pincode3,
+      tpre.start_grade,
+      tpre.end_grade,
+      tpi.t_caste as caste,
+      tpi.t_religion as religion
 
-    // Load sub-details: students and availability for each tutor
-    for (const tutor of tutors) {
-      // 1. Load students
-      const studRes = await db.query(
-        `SELECT s_id FROM assigned_info WHERE t_id = $1`,
-        [tutor.id]
-      );
-      tutor.students = studRes.rows.map(r => `S${String(r.s_id).padStart(3, '0')}`);
+    FROM tutor_personal_info tpi
 
-      // Calculate earnings (mock based on active students)
-      tutor.earnings = tutor.students.length * 2000;
+    LEFT JOIN tutor_education_info tei
+      ON tpi.t_id = tei.t_id
 
-      // 2. Load availability
-      const availRes = await db.query(
-        `SELECT day_id, slot_id, availability FROM tutor_availability_info WHERE t_id = $1`,
-        [tutor.id]
-      );
-      tutor.availability = { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] };
-      for (const r of availRes.rows) {
-        const dayKey = DAYS_REV_MAP[r.day_id];
-        if (dayKey) {
-          const timeStr = SLOT_TIME_REV_MAP[r.slot_id] || '05:00 PM';
-          tutor.availability[dayKey].push(timeStr);
-        }
-      }
+    LEFT JOIN tutor_location_info tli
+      ON tpi.t_id = tli.t_id
 
-      // 3. Load loyalty payments
-      const loyaltyRes = await db.query(
-        `SELECT lp.id, 
-                lp.paid_at as date, 
-                lp.amount_paid as amount, 
-                lp.payment_status as status,
-                lp.billing_period_start as billing_start,
-                lp.billing_period_end as billing_end,
-                spi.s_name as student_name
-         FROM loyalty_payments lp
-         JOIN tutor_student_pairings tsp ON lp.pairing_id = tsp.id
-         LEFT JOIN student_personal_info spi ON tsp.s_id = spi.s_id
-         WHERE tsp.t_id = $1
-         ORDER BY lp.billing_period_start DESC, lp.id DESC`,
-        [tutor.id]
-      );
-      tutor.loyalty = loyaltyRes.rows.map(r => {
-        const startStr = r.billing_start ? new Date(r.billing_start).toISOString().split('T')[0] : '';
-        const endStr = r.billing_end ? new Date(r.billing_end).toISOString().split('T')[0] : '';
-        return {
-          id: r.id,
-          date: r.date ? new Date(r.date).toISOString().split('T')[0] : startStr,
-          amount: Number(r.amount || 0),
-          notes: `For ${r.student_name || 'Student'} - Billing Period: ${startStr} to ${endStr} (${r.status.toUpperCase()})`
-        };
-      });
-    }
+    LEFT JOIN locations l
+      ON tli.town = l.location_id
 
-    return tutors.map(mapDbRowToTutor);
-  },
+    LEFT JOIN tutor_preference_info tpre
+      ON tpi.t_id = tpre.t_id
 
-  findById: async (id) => {
-    const dbId = typeof id === 'string' && id.startsWith('T')
-      ? parseInt(id.slice(1))
-      : parseInt(id);
+    LEFT JOIN pincodes p1
+      ON tpre.pincode1::VARCHAR = p1.code_id::VARCHAR
 
-    const query = `
-      SELECT 
-        u.user_id as id,
-        tpi.t_name as name,
-        tpi.t_gender as gender,
-        tpi.t_adhaar_num as aadhaar,
-        tpi.t_phone as phone,
-        u.email,
-        u.created_at as "joiningDate",
-        tli.full_address as address,
-        tli.landmark as landmark,
-        tei.deg_name as qualification,
-        tei.deg_name as degree_name,
-        tei.experience as experience,
-        tei.tenth_school_name as tenth_school_name,
-        tei.tenth_cgpa as tenth_cgpa,
-        tei.inter_stream as inter_stream,
-        tei.inter_clg_name as inter_college_name,
-        tei.inter_cgpa as inter_cgpa,
-        tei.deg_clg_name as degree_college_name,
-        tei.deg_cpga as degree_cgpa,
-        tei.occupation as occupation,
-        l.location_name as town,
-        tpre.tel, tpre.hindi, tpre.eng, tpre.math, tpre.phy, tpre.bio, tpre.chem, tpre.social,
-        p1.pincode as pincode1, p2.pincode as pincode2, p3.pincode as pincode3,
-        tpre.start_grade, tpre.end_grade,
-        tpi.t_caste as caste,
-        tpi.t_religion as religion
-      FROM users u
-      LEFT JOIN tutor_personal_info tpi ON u.user_id = tpi.t_id
-      LEFT JOIN tutor_education_info tei ON u.user_id = tei.t_id
-      LEFT JOIN tutor_location_info tli ON u.user_id = tli.t_id
-      LEFT JOIN locations l ON tli.town = l.location_id
-      LEFT JOIN tutor_preference_info tpre ON u.user_id = tpre.t_id
-      LEFT JOIN pincodes p1 ON tpre.pincode1::VARCHAR = p1.code_id::VARCHAR
-      LEFT JOIN pincodes p2 ON tpre.pincode2::VARCHAR = p2.code_id::VARCHAR
-      LEFT JOIN pincodes p3 ON tpre.pincode3::VARCHAR = p3.code_id::VARCHAR
-      WHERE u.user_id = $1
-    `;
-    const result = await db.query(query, [dbId]);
-    if (result.rows.length === 0) return null;
-    const tutor = result.rows[0];
+    LEFT JOIN pincodes p2
+      ON tpre.pincode2::VARCHAR = p2.code_id::VARCHAR
 
-    // Load sub-details
+    LEFT JOIN pincodes p3
+      ON tpre.pincode3::VARCHAR = p3.code_id::VARCHAR
+
+    ORDER BY tpi.t_id DESC
+  `;
+
+  const result = await db.query(query);
+  const tutors = result.rows;
+
+  // Load sub-details: students and availability for each tutor
+  for (const tutor of tutors) {
+    // 1. Load students
     const studRes = await db.query(
       `SELECT s_id FROM assigned_info WHERE t_id = $1`,
-      [dbId]
+      [tutor.id]
     );
-    tutor.students = studRes.rows.map(r => `S${String(r.s_id).padStart(3, '0')}`);
+
+    tutor.students = studRes.rows.map(
+      r => `S${String(r.s_id).padStart(3, '0')}`
+    );
+
+    // Calculate earnings
     tutor.earnings = tutor.students.length * 2000;
 
+    // 2. Load availability
     const availRes = await db.query(
-      `SELECT day_id, slot_id, availability FROM tutor_availability_info WHERE t_id = $1`,
-      [dbId]
+      `SELECT day_id, slot_id, availability
+       FROM tutor_availability_info
+       WHERE t_id = $1`,
+      [tutor.id]
     );
-    tutor.availability = { Mon: [], Tue: [], Wed: [], Thu: [], Fri: [], Sat: [], Sun: [] };
+
+    tutor.availability = {
+      Mon: [], Tue: [], Wed: [], Thu: [],
+      Fri: [], Sat: [], Sun: []
+    };
+
     for (const r of availRes.rows) {
       const dayKey = DAYS_REV_MAP[r.day_id];
+
       if (dayKey) {
         const timeStr = SLOT_TIME_REV_MAP[r.slot_id] || '05:00 PM';
         tutor.availability[dayKey].push(timeStr);
@@ -321,33 +252,205 @@ const TutorModel = {
 
     // 3. Load loyalty payments
     const loyaltyRes = await db.query(
-      `SELECT lp.id, 
-              lp.paid_at as date, 
-              lp.amount_paid as amount, 
-              lp.payment_status as status,
-              lp.billing_period_start as billing_start,
-              lp.billing_period_end as billing_end,
-              spi.s_name as student_name
+      `SELECT 
+          lp.id,
+          lp.paid_at as date,
+          lp.amount_paid as amount,
+          lp.payment_status as status,
+          lp.billing_period_start as billing_start,
+          lp.billing_period_end as billing_end,
+          spi.s_name as student_name
+
        FROM loyalty_payments lp
-       JOIN tutor_student_pairings tsp ON lp.pairing_id = tsp.id
-       LEFT JOIN student_personal_info spi ON tsp.s_id = spi.s_id
+
+       JOIN tutor_student_pairings tsp
+         ON lp.pairing_id = tsp.id
+
+       LEFT JOIN student_personal_info spi
+         ON tsp.s_id = spi.s_id
+
        WHERE tsp.t_id = $1
+
        ORDER BY lp.billing_period_start DESC, lp.id DESC`,
-      [dbId]
+      [tutor.id]
     );
+
     tutor.loyalty = loyaltyRes.rows.map(r => {
-      const startStr = r.billing_start ? new Date(r.billing_start).toISOString().split('T')[0] : '';
-      const endStr = r.billing_end ? new Date(r.billing_end).toISOString().split('T')[0] : '';
+      const startStr = r.billing_start
+        ? new Date(r.billing_start).toISOString().split('T')[0]
+        : '';
+
+      const endStr = r.billing_end
+        ? new Date(r.billing_end).toISOString().split('T')[0]
+        : '';
+
       return {
         id: r.id,
-        date: r.date ? new Date(r.date).toISOString().split('T')[0] : startStr,
+        date: r.date
+          ? new Date(r.date).toISOString().split('T')[0]
+          : startStr,
         amount: Number(r.amount || 0),
-        notes: `For ${r.student_name || 'Student'} - Billing Period: ${startStr} to ${endStr} (${r.status.toUpperCase()})`
+        notes: `For ${r.student_name || 'Student'} - Billing Period: ${startStr} to ${endStr} (${(r.status || '').toUpperCase()})`
       };
     });
+  }
 
-    return mapDbRowToTutor(tutor);
-  },
+  return tutors.map(mapDbRowToTutor);
+},
+
+
+  
+findById: async (id) => {
+  const dbId = typeof id === 'string' && id.startsWith('T')
+    ? parseInt(id.slice(1))
+    : parseInt(id);
+
+  const query = `
+    SELECT 
+      tpi.t_id as id,
+      tpi.t_name as name,
+      tpi.t_gender as gender,
+      tpi.t_adhaar_num as aadhaar,
+      tpi.t_phone as phone,
+      NULL as email,
+      NULL as "joiningDate",
+      tli.full_address as address,
+      tli.landmark as landmark,
+      tei.deg_name as qualification,
+      tei.deg_name as degree_name,
+      tei.experience as experience,
+      tei.tenth_school_name as tenth_school_name,
+      tei.tenth_cgpa as tenth_cgpa,
+      tei.inter_stream as inter_stream,
+      tei.inter_clg_name as inter_college_name,
+      tei.inter_cgpa as inter_cgpa,
+      tei.deg_clg_name as degree_college_name,
+      tei.deg_cpga as degree_cgpa,
+      tei.occupation as occupation,
+      l.location_name as town,
+      tpre.tel, tpre.hindi, tpre.eng, tpre.math,
+      tpre.phy, tpre.bio, tpre.chem, tpre.social,
+      p1.pincode as pincode1,
+      p2.pincode as pincode2,
+      p3.pincode as pincode3,
+      tpre.start_grade,
+      tpre.end_grade,
+      tpi.t_caste as caste,
+      tpi.t_religion as religion
+
+    FROM tutor_personal_info tpi
+
+    LEFT JOIN tutor_education_info tei
+      ON tpi.t_id = tei.t_id
+
+    LEFT JOIN tutor_location_info tli
+      ON tpi.t_id = tli.t_id
+
+    LEFT JOIN locations l
+      ON tli.town = l.location_id
+
+    LEFT JOIN tutor_preference_info tpre
+      ON tpi.t_id = tpre.t_id
+
+    LEFT JOIN pincodes p1
+      ON tpre.pincode1::VARCHAR = p1.code_id::VARCHAR
+
+    LEFT JOIN pincodes p2
+      ON tpre.pincode2::VARCHAR = p2.code_id::VARCHAR
+
+    LEFT JOIN pincodes p3
+      ON tpre.pincode3::VARCHAR = p3.code_id::VARCHAR
+
+    WHERE tpi.t_id = $1
+  `;
+
+  const result = await db.query(query, [dbId]);
+
+  if (result.rows.length === 0) return null;
+
+  const tutor = result.rows[0];
+
+  // 1. Load students
+  const studRes = await db.query(
+    `SELECT s_id FROM assigned_info WHERE t_id = $1`,
+    [dbId]
+  );
+
+  tutor.students = studRes.rows.map(
+    r => `S${String(r.s_id).padStart(3, '0')}`
+  );
+
+  tutor.earnings = tutor.students.length * 2000;
+
+  // 2. Load availability
+  const availRes = await db.query(
+    `SELECT day_id, slot_id, availability
+     FROM tutor_availability_info
+     WHERE t_id = $1`,
+    [dbId]
+  );
+
+  tutor.availability = {
+    Mon: [], Tue: [], Wed: [], Thu: [],
+    Fri: [], Sat: [], Sun: []
+  };
+
+  for (const r of availRes.rows) {
+    const dayKey = DAYS_REV_MAP[r.day_id];
+
+    if (dayKey) {
+      const timeStr = SLOT_TIME_REV_MAP[r.slot_id] || '05:00 PM';
+      tutor.availability[dayKey].push(timeStr);
+    }
+  }
+
+  // 3. Load loyalty payments
+  const loyaltyRes = await db.query(
+    `SELECT 
+        lp.id,
+        lp.paid_at as date,
+        lp.amount_paid as amount,
+        lp.payment_status as status,
+        lp.billing_period_start as billing_start,
+        lp.billing_period_end as billing_end,
+        spi.s_name as student_name
+
+     FROM loyalty_payments lp
+
+     JOIN tutor_student_pairings tsp
+       ON lp.pairing_id = tsp.id
+
+     LEFT JOIN student_personal_info spi
+       ON tsp.s_id = spi.s_id
+
+     WHERE tsp.t_id = $1
+
+     ORDER BY lp.billing_period_start DESC, lp.id DESC`,
+    [dbId]
+  );
+
+  tutor.loyalty = loyaltyRes.rows.map(r => {
+    const startStr = r.billing_start
+      ? new Date(r.billing_start).toISOString().split('T')[0]
+      : '';
+
+    const endStr = r.billing_end
+      ? new Date(r.billing_end).toISOString().split('T')[0]
+      : '';
+
+    return {
+      id: r.id,
+      date: r.date
+        ? new Date(r.date).toISOString().split('T')[0]
+        : startStr,
+      amount: Number(r.amount || 0),
+      notes: `For ${r.student_name || 'Student'} - Billing Period: ${startStr} to ${endStr} (${(r.status || '').toUpperCase()})`
+    };
+  });
+
+  return mapDbRowToTutor(tutor);
+},
+
 
   findByTown: async (town) => {
     const tutors = await TutorModel.findAll();
