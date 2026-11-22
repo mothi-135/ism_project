@@ -20,30 +20,56 @@ function mapDbRowToAdmin(row) {
 }
 
 const AdminModel = {
-  findAll: async () => {
-    // Query admins and calculate students, tutors, and revenue in their locations dynamically
-    const query = `
-      SELECT 
-        u.user_id as id,
-        u.email,
-        u.role_id,
-        u.created_at as "joiningDate",
-        l.location_name as town,
-        (SELECT COUNT(*) FROM users s_u 
-         WHERE s_u.role_id = 3 AND s_u.location_id = u.location_id) as student_count,
-        (SELECT COUNT(*) FROM users t_u 
-         WHERE t_u.role_id = 4 AND t_u.location_id = u.location_id) as tutor_count,
-        (SELECT COALESCE(SUM(ai.confirmed_fee), 0) FROM assigned_info ai
-         LEFT JOIN users s_u ON ai.s_id = s_u.user_id
-         WHERE s_u.location_id = u.location_id) as revenue
-      FROM users u
-      LEFT JOIN locations l ON u.location_id = l.location_id
-      WHERE u.role_id IN (1, 2)
-      ORDER BY u.user_id ASC
-    `;
-    const result = await db.query(query);
-    return result.rows.map(mapDbRowToAdmin);
-  },
+  
+findAll: async () => {
+  const query = `
+    SELECT 
+      u.user_id as id,
+      u.email,
+      u.role_id,
+      u.created_at as "joiningDate",
+      l.location_name as town,
+
+      -- Count actual student profiles in this location
+      (
+        SELECT COUNT(DISTINCT spi.s_id)
+        FROM student_personal_info spi
+        JOIN student_location_info sli
+          ON spi.s_id = sli.s_id
+        WHERE sli.town_id = u.location_id
+      ) as student_count,
+
+      -- Count actual tutor profiles in this location
+      (
+        SELECT COUNT(DISTINCT tpi.t_id)
+        FROM tutor_personal_info tpi
+        JOIN tutor_location_info tli
+          ON tpi.t_id = tli.t_id
+        WHERE tli.town = u.location_id
+      ) as tutor_count,
+
+      -- Calculate revenue from assigned students in this location
+      (
+        SELECT COALESCE(SUM(ai.confirmed_fee), 0)
+        FROM assigned_info ai
+        JOIN student_location_info sli
+          ON ai.s_id = sli.s_id
+        WHERE sli.town_id = u.location_id
+      ) as revenue
+
+    FROM users u
+
+    LEFT JOIN locations l
+      ON u.location_id = l.location_id
+
+    WHERE u.role_id IN (1, 2)
+
+    ORDER BY u.user_id ASC
+  `;
+
+  const result = await db.query(query);
+  return result.rows.map(mapDbRowToAdmin);
+},
 
   findById: async (id) => {
     const dbId = typeof id === 'string' && id.startsWith('A')
