@@ -111,7 +111,7 @@ function mapDbRowToStudent(row) {
 }
 
 const StudentModel = {
-  static async findAll(month, year) {
+  findAll: async (month, year) => {
     const query = `
         SELECT 
             spi.s_id as id,
