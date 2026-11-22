@@ -111,64 +111,105 @@ function mapDbRowToStudent(row) {
 }
 
 const StudentModel = {
-  findAll: async (month, year) => {
-    const m = month || (new Date().getMonth() + 1);
-    const y = year || new Date().getFullYear();
+  static async findAll(month, year) {
     const query = `
-      SELECT 
-        u.user_id as id,
-        spi.s_name as name,
-        spi.s_gender as gender,
-        COALESCE(spi.s_adhaar_num, '') as aadhaar,
-        COALESCE(spi.s_school_city, '') as "schoolCity",
-        COALESCE(spi.s_academic_year, '') as "academicYear",
-        COALESCE(spi.s_caste, '') as caste,
-        COALESCE(spi.s_religion, '') as religion,
-        COALESCE(s_par.father_name, '') as "fatherName",
-        COALESCE(s_par.father_mobile, '') as "fatherPhone",
-        COALESCE(s_par.father_occupation, '') as "fatherOccupation",
-        COALESCE(s_par.mother_name, '') as "motherName",
-        COALESCE(s_par.mother_mobile, '') as "motherPhone",
-        COALESCE(s_par.mother_occupation, '') as "motherOccupation",
-        COALESCE(sli.landmark, '') as landmark,
-        p.pincode as pincode,
-        sp.tutor_gender as "preferredGender",
-        ARRAY(SELECT sts2.slot_id FROM student_time_slot sts2 WHERE sts2.s_id = u.user_id) as slot_ids,
-        u.created_at as "joiningDate",
-        u.email,
-        spi.s_grade as grade,
-        COALESCE(spi.s_school_name, '') as school,
-        COALESCE(spi.s_board, '') as board,
-        sp.additional_requirements as "additionalRequirements",
-        l.location_name as town,
-        ai.t_id as tutor,
-        ai.confirmed_fee as fees,
-        EXISTS (
-          SELECT 1 FROM payement_history ph 
-          WHERE ph.pairng_id = ai.d_id 
-            AND EXTRACT(MONTH FROM ph.billing_period_start) = $1 
-            AND EXTRACT(YEAR FROM ph.billing_period_start) = $2
-            AND ph.payment_status = 'PAID'
-        ) as "feesPaid",
-        COALESCE(s_par.father_name, '') as parent,
-        COALESCE(s_par.father_mobile, '') as phone,
-        sli.s_address as address,
-        sp.tel, sp.hindi, sp.eng, sp.math, sp.phy, sp.bio, sp.chem, sp.social,
-        CASE WHEN ai.t_id IS NOT NULL THEN 'active' ELSE 'pending' END as status
-      FROM users u
-      LEFT JOIN student_personal_info spi ON u.user_id = spi.s_id
-      LEFT JOIN student_parent_info s_par ON u.user_id = s_par.s_id
-      LEFT JOIN student_location_info sli ON u.user_id = sli.s_id
-      LEFT JOIN pincodes p ON sli.pincode::VARCHAR = p.code_id::VARCHAR
-      LEFT JOIN locations l ON sli.town_id = l.location_id
-      LEFT JOIN student_preferences sp ON u.user_id = sp.s_id
-      LEFT JOIN assigned_info ai ON u.user_id = ai.s_id
-      WHERE u.role_id = 3
-      ORDER BY u.user_id DESC
+        SELECT 
+            spi.s_id as id,
+            spi.s_name as name,
+            spi.s_gender as gender,
+            COALESCE(spi.s_adhaar_num, '') as aadhaar,
+            COALESCE(spi.s_school_city, '') as "schoolCity",
+            COALESCE(spi.s_academic_year, '') as "academicYear",
+            COALESCE(spi.s_caste, '') as caste,
+            COALESCE(spi.s_religion, '') as religion,
+
+            COALESCE(s_par.father_name, '') as "fatherName",
+            COALESCE(s_par.father_mobile, '') as "fatherPhone",
+            COALESCE(s_par.father_occupation, '') as "fatherOccupation",
+            COALESCE(s_par.mother_name, '') as "motherName",
+            COALESCE(s_par.mother_mobile, '') as "motherPhone",
+            COALESCE(s_par.mother_occupation, '') as "motherOccupation",
+
+            COALESCE(sli.landmark, '') as landmark,
+            p.pincode as pincode,
+
+            sp.tutor_gender as "preferredGender",
+
+            ARRAY(
+                SELECT sts2.slot_id
+                FROM student_time_slot sts2
+                WHERE sts2.s_id = spi.s_id
+            ) as slot_ids,
+
+            NULL as "joiningDate",
+            NULL as email,
+
+            spi.s_grade as grade,
+            COALESCE(spi.s_school_name, '') as school,
+            COALESCE(spi.s_board, '') as board,
+
+            sp.additional_requirements as "additionalRequirements",
+
+            l.location_name as town,
+
+            ai.t_id as tutor,
+            ai.confirmed_fee as fees,
+
+            EXISTS (
+                SELECT 1
+                FROM payement_history ph
+                WHERE ph.pairng_id = ai.d_id
+                  AND EXTRACT(MONTH FROM ph.billing_period_start) = $1
+                  AND EXTRACT(YEAR FROM ph.billing_period_start) = $2
+                  AND ph.payment_status = 'PAID'
+            ) as "feesPaid",
+
+            COALESCE(s_par.father_name, '') as parent,
+            COALESCE(s_par.father_mobile, '') as phone,
+
+            sli.s_address as address,
+
+            sp.tel,
+            sp.hindi,
+            sp.eng,
+            sp.math,
+            sp.phy,
+            sp.bio,
+            sp.chem,
+            sp.social,
+
+            CASE
+                WHEN ai.t_id IS NOT NULL THEN 'active'
+                ELSE 'pending'
+            END as status
+
+        FROM student_personal_info spi
+
+        LEFT JOIN student_parent_info s_par
+            ON spi.s_id = s_par.s_id
+
+        LEFT JOIN student_location_info sli
+            ON spi.s_id = sli.s_id
+
+        LEFT JOIN pincodes p
+            ON sli.pincode::VARCHAR = p.code_id::VARCHAR
+
+        LEFT JOIN locations l
+            ON sli.town_id = l.location_id
+
+        LEFT JOIN student_preferences sp
+            ON spi.s_id = sp.s_id
+
+        LEFT JOIN assigned_info ai
+            ON spi.s_id = ai.s_id
+
+        ORDER BY spi.s_id DESC
     `;
-    const result = await db.query(query, [m, y]);
-    return result.rows.map(mapDbRowToStudent);
-  },
+
+    const result = await db.query(query, [month, year]);
+
+    return result.rows;
+},
 
   findById: async (id, month, year) => {
     // Check if ID is a formatted string S001 or raw integer
