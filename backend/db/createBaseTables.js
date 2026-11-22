@@ -383,59 +383,6 @@ async function createBaseTables(client) {
     ON CONFLICT (location_id) DO NOTHING;
   `);
 
-  // 16. Seed Demo Credentials (Global Admin, Local Admin, Student, Tutor)
-  console.log('🌱 Seeding Demo Credentials into users and personal info tables...');
-
-  // Helper to upsert demo user safely
-  async function upsertDemoUser(email, password, roleId, locationId) {
-    const res = await client.query('SELECT user_id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    if (res.rows.length > 0) {
-      const userId = res.rows[0].user_id;
-      await client.query('UPDATE users SET password = $1, role_id = $2, location_id = $3, is_active = TRUE WHERE user_id = $4', [password, roleId, locationId, userId]);
-      return userId;
-    } else {
-      const insertRes = await client.query('INSERT INTO users (email, password, role_id, location_id, is_active) VALUES ($1, $2, $3, $4, TRUE) RETURNING user_id', [email, password, roleId, locationId]);
-      return insertRes.rows[0].user_id;
-    }
-  }
-
-  // 1. Global Admin: sravan@gmail.com / ism@123
-  await upsertDemoUser('sravan@gmail.com', 'ism@123', 1, 1);
-
-  // 2. Local Admin: mothi@gmail.com / ism@123
-  await upsertDemoUser('mothi@gmail.com', 'ism@123', 2, 1);
-
-  // 3. Student: student1@example.com / ism@123
-  const sId = await upsertDemoUser('student1@example.com', 'ism@123', 3, 1);
-  await client.query('ALTER TABLE student_parent_info DROP CONSTRAINT IF EXISTS uq_student_parent_info_s_id');
-  await client.query('ALTER TABLE student_parent_info ADD CONSTRAINT uq_student_parent_info_s_id UNIQUE(s_id)');
-  
-  await client.query('ALTER TABLE tutor_education_info DROP CONSTRAINT IF EXISTS uq_tutor_education_info_t_id');
-  await client.query('ALTER TABLE tutor_education_info ADD CONSTRAINT uq_tutor_education_info_t_id UNIQUE(t_id)');
-
-  await client.query(`
-    INSERT INTO student_personal_info (s_id, s_name, s_adhaar_num, s_gender, s_grade, s_school_name, s_school_city, s_caste, s_religion, s_board)
-    VALUES ($1, 'Demo Student One', '123456789012', 'M', '10', 'St. Johns High School', 'Naidupet', 'OBC', 'HINDU', 'CBSE')
-    ON CONFLICT (s_id) DO UPDATE SET s_school_name = EXCLUDED.s_school_name, s_board = EXCLUDED.s_board;
-  `, [sId]);
-  await client.query(`
-    INSERT INTO student_parent_info (s_id, father_name, father_mobile, father_occupation, mother_name, mother_mobile, mother_occupation)
-    VALUES ($1, 'Parent One', '9876543210', 'Engineer', 'Mother One', '9876543211', 'Homemaker')
-    ON CONFLICT (s_id) DO NOTHING;
-  `, [sId]);
-
-  // 4. Tutor: tutor1@example.com / ism@123
-  const tId = await upsertDemoUser('tutor1@example.com', 'ism@123', 4, 1);
-  await client.query(`
-    INSERT INTO tutor_personal_info (t_id, t_name, t_adhaar_num, t_gender, t_caste, t_religion, t_phone)
-    VALUES ($1, 'Demo Tutor One', '987654321098', 'F', 'OBC', 'HINDU', '9123456789')
-    ON CONFLICT (t_id) DO UPDATE SET t_gender = EXCLUDED.t_gender, t_phone = EXCLUDED.t_phone, t_caste = EXCLUDED.t_caste, t_religion = EXCLUDED.t_religion;
-  `, [tId]);
-  await client.query(`
-    INSERT INTO tutor_education_info (t_id, tenth_school_name, tenth_cgpa, inter_stream, inter_clg_name, inter_cgpa, deg_name, deg_clg_name, deg_cpga, deg_passing_year, occupation, experience)
-    VALUES ($1, 'ZPHS School', 9.5, 'MPC', 'Junior College', 9.2, 'M.Sc', 'University', 8.5, 2018, 'Teacher', '5 years')
-    ON CONFLICT (t_id) DO NOTHING;
-  `, [tId]);
   // 17. Admin Notifications Table
   await client.query(`
     CREATE TABLE IF NOT EXISTS admin_notifications (
